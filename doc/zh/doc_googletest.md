@@ -15,5 +15,8 @@ googletest在C++领域是非常成熟和全面的测试框架，它被各大企�
 我们选择了googletest
 
 ### googletest的安装
-googletest有很多安装方式可供选择，此处介绍两种方式安装。  
-1. release版本安装
+
+
+### 如何使用googletest？
+在本项目中，我们以CMake与goolgetest配合使用，因此也会讲解部分CMake的知识
+1. 
