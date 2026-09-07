@@ -22,7 +22,6 @@
 // int64_t的头文件，int64_t是64位int类型，32位int在深度学习中有概率溢出
 #include <cstdint>
 #include <cstdlib>
-
 /*
 对于顺序存储数组+strides实现tensor，其具体的实现方法也有不少种类，这里就拿我比较熟悉的两类方式谈论一下。
 第一种是无论在学习还是工程上都是一个比较推荐和简单的方案，即使用vector来储存数据，strides来实现任意维度，

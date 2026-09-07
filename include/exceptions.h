@@ -1,6 +1,6 @@
 // 
-// exception.h
-// GraceInfra
+// exceptions.h
+// GraceInfraj
 // 
 // Created by DaR1ng on 26-9-3
 
