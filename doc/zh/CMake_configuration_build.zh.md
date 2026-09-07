@@ -44,16 +44,20 @@ add_executable(main src/matrix.cpp src/tensor.cpp src/main.cpp)      # 编译并
 ### 如何使用CMake？
 首先要使用CMake，你需要在项目根目录中创建一个`CMakeLists.txt`，注意大小写。随后进入该文件进行编辑，对于目前的项目来说，可以这样构建:  
 ```cmake
-cmake_minimum_required(VERSION 3.20) # 1*
-project(GraceInfra VERSION 0.1.0)    # 2*
+cmake_minimum_required(VERSION 3.20)    # 1*
+project(GraceInfra VERSION 0.1.0)       # 2*
 
 set(SOURCES
     src/tensor.cpp
     src/matrix.cpp
     src/main.cpp    
-)                                    # 3*
+)                                       # 3*
 
-add_executable(main ${SOURCES})      # 4*
+add_executable(main ${SOURCES})         # 4*
+
+target_include_directories(main PRIVATE # 5*
+    ${CMAKE_SOURCE_DIR}/include         # 6*
+)
 ```
 注:  
 1. `cmake_minimum_required(VERSION 3.20)`指定所需的CMake的最低版本，比如如果使用C++17标准，建议CMake版本在3.20及以上
@@ -79,7 +83,9 @@ cmake ..   #注意cmake后面是一个空格和两个英文句号
 ```
 
 如果你是Windows平台，在终端中输入`cmake --build . --config Debug`,注意空格和英文句号。终端中输入`./main.exe`即可运行  
-如果你是macOS或Linux平台，在终端中输入`make`即可，随后输入`./main`即可运行  
+如果你是macOS或Linux平台，在终端中输入`make`即可，随后输入`./main`即可运行
+5. `target_include_directories`管理头文件路径，其结构为`target_include_directories(<target> <PRIVATE|PUBLIC|INTERFACE> <目录>)`，其中的PRIVATE|PUBLIC|INTERFACE可以暂时不做了解，使用PRIVATE即可
+6. `CMAKE_SOURCE_DIR`代表整个项目的最顶层源代码目录（永远不变）
 
 
 

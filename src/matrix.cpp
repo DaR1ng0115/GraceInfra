@@ -9,7 +9,7 @@
 在本章中，我会尽可能显式写出“this”，以便于理解，后续我会省略
 */
 
-#include "../include/matrix.h"
+#include "matrix.h"
 #include <cassert>
 
 // 在命名上，我们可以让数据结构自带的私有成员变量属性带有下标，即variable_

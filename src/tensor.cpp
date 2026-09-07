@@ -9,8 +9,8 @@
 #include <cstdint>
 #include <utility>
 #include <limits>
-#include "../include/tensor.h"
-#include "../include/exceptions.h"
+#include "tensor.h"
+#include "exceptions.h"
 
 
 Tensor::Tensor()

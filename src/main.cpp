@@ -1,7 +1,7 @@
 #include <iostream>
 #include <chrono>
-#include "../include/matrix.h"
-#include "../include/tensor.h"
+#include "matrix.h"
+#include "tensor.h"
 
 
 int main() {
@@ -18,7 +18,7 @@ int main() {
 
     auto end_tensor = std::chrono::high_resolution_clock::now();
     auto ms_tensor = std::chrono::duration_cast<std::chrono::milliseconds>(end_tensor - start_tensor);
-    std::cout<< ms_tensor.count() / 1000.0 << "ms\n";
+    std::cout<< ms_tensor.count() / 1000.0 << "s\n";
 
     Matrix m1(100000, 5000, 5);
     Matrix m2(100000, 5000, 10);
@@ -30,7 +30,7 @@ int main() {
 
     auto end_matrix = std::chrono::high_resolution_clock::now();
     auto ms_matrix = std::chrono::duration_cast<std::chrono::milliseconds>(end_matrix - start_matrix);
-    std::cout << ms_matrix.count() / 1000.0 << "ms\n";
+    std::cout << ms_matrix.count() / 1000.0 << "s\n";
 
     std::cout << m3(300, 255) << "\n";
 
