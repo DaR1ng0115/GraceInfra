@@ -5,7 +5,7 @@
 #include "tensor.h"
 #include "exceptions.h"
 
-TEST(ConstructorFunction, DefaultConstrutor) {
+TEST(ConstructorFunction, DefaultConstructor) {
 // 默认构造函数
     Tensor DefaultTensor;
     EXPECT_EQ(DefaultTensor.data(), nullptr);
