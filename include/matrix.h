@@ -1,6 +1,6 @@
 // 
 // matrix.h
-// Polaris
+// GraceInfra
 //
 // Created by DaR1ng on 26-7-9
 
@@ -11,17 +11,13 @@
 2. matrix在深度学习中有什么作用？
 3. 在深度学习中，matrix应该具备哪些功能？
 接下来，带着这些问题学习后续的内容
-
-This file is the header file for matrix, which defines the matrix data type and its main methods (functions).
-Before we officially start, I hope you can think about the following questions:
-1. What is a matrix?
-2. What role does a matrix play in deep learning?
-3. What functions should a matrix have in deep learning?
-Then, learn the following content with these questions in mind.
 */
 
 #pragma once
 #include <vector>
+#include <cstdlib>
+#include <algorithm>
+#include <utility>
 
 class Matrix {
 private:
@@ -46,7 +42,7 @@ public:
 
     int rows() const;
     int cols() const;
-    int length() const;
+    int numel() const;
     float* data();
     const float* data() const;
 

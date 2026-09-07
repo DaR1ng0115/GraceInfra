@@ -4,44 +4,46 @@
 [简体中文](README.zh.md)
 
 ## INTRODUCTION
-Polaris is a deep learning training and inference framework that focuses on *teaching* from scratch. The entire project is developed using C++ and CUDA, so you need to have a certain foundation in C++.
-This project focuses on high performance, supplemented by deep learning frameworks, to learn low-level thinking (the author is also continuously learning :))  
-Therefore, if you just want to understand *automatic differentiation*, *computational graphs*, *Transformer principles*, then you can choose other better projects, such as karpathy/micrograd or tinygrad.  
-If you want to *train a large model using C++*, *know what is happening inside PyTorch*, *learn data structures, computer organization principles, and computer architecture in programming applications*,  
-then this project is the best choice.
-Since I am a junior student, there may inevitably be bugs, omissions, inaccuracies, and even errors in the project. I hope everyone can be understanding, and I am also happy to accept criticism and corrections.  
+GraceInfra is a deep learning training and inference framework built from scratch with a focus on *teaching*. The entire project is developed using C++ and CUDA, so a certain foundation in C++ is required.
+This project emphasizes high performance while using deep learning frameworks as a supplement, with the goal of learning low-level thinking (the author is also continuously learning :)).  
+Therefore, if you only want to understand *automatic differentiation*, *computational graphs*, or *Transformer principles*, you may want to choose other excellent projects, such as karpathy/micrograd or tinygrad.  
+If you want to *train a large model using C++*, *understand what is happening inside PyTorch*, and *learn how data structures, computer organization, and computer architecture are applied in programming*, then this project may be a good choice.
+At the same time, this project covers a broad range of topics. If you are a junior or senior undergraduate student, a second-year graduate student, or primarily focused on finding a job, you may want to take a look at AIInfraGuide, which requires less time to study.  
+Therefore, this project is especially recommended for people who are *genuinely interested* in the subject.
+Since I am a student, the project will inevitably contain bugs, omissions, inaccuracies, and even mistakes. I hope everyone will be understanding, and I welcome criticism and corrections.  
 
 In this chapter, we focus on:
 - Engineering specifications
 - Introduction to deep learning
 - Linear algebra and deep learning
 
-Before learning, you should master the following knowledge:
-- Basic knowledge of linear algebra (mainly matrices)
-- C/C++ basics (data types, pointers, functions, structures, classes)
+The goal of this chapter is to implement a basic Tensor data structure from scratch and understand how it is used in deep learning.
 
-## Engineering specifications
+Before learning, you should have a basic understanding of:
+- Linear algebra, especially matrices
+- C/C++ fundamentals, including data types, pointers, functions, structures, and classes
+
+## Engineering Specifications
 **To do a good job, one must first sharpen one's tools.**  
-First, you need to understand the project structure, the files/modules/functions that may be needed...
-A common pattern is to place source files (.cpp/.cxx) in the src folder and header files (.h/.hpp) in the include folder.
-Among them, the src and include folders can be further classified according to their functions, such as utils (tools), config (configuration files), etc. You can create them as needed, and this project will provide as standardized a file classification as possible.
-At the beginning of each file, you can also refer to my pattern:
-// 
-// filename.cpp 
+First, you need to understand the project structure and the files, modules, and functions that may be needed.
+A common convention is to place source files (`.cpp`/`.cxx`) in the `src` directory and header files (`.h`/`.hpp`) in the `include` directory.
+The `src` and `include` directories may be further organized by function, such as `utils` for tools and `config` for configuration files. Create such subdirectories as needed; this project aims to maintain a clear and standardized file organization.
+At the beginning of each file, you may also follow this pattern:
+```cpp
+//
+// filename.cpp
 // ProjectName
 //
 // Created by username on xx-xx-xx
+```
 
-## Introduction to deep learning
-I won't talk about many advanced concepts and rigorous logic here--these are well covered in tutorials on the market. I will talk more about my personal understanding, which may help everyone better understand deep learning.
-deep learning is essentially fitting a `function`, which means that many things can be described by some function. However, unlike the functions we usually see, the functions fitted by deep learning are multivariate, with all variables being tensors and several orders of magnitude more complex.
-With this macro concept, we can better understand which modules are important and which functions need to be focused on.
-By the way, `this project is more suitable for readers who are interested in systems`. If you plan to focus on algorithms, other tutorials, courses, or books may be more suitable for you. However, this suggestion is not absolute. Algorithms are built on top of systems, and understanding some knowledge about systems is beneficial to algorithms.
-
-## Linear algebra and deep learning
-Linear algebra is not a very advanced field. You can think of linear algebra as a carrier of `information`, and one of the most important concepts in deep learning is information. How to carry more information in a unit space is a very important topic. For example, if a matrix is a singular matrix, then it is not invertible, and it is a `bad matrix` (quoted from MIT 18.06 Gilbert Strang), because this matrix carries some `nonsense`. If you don't know what a singular matrix is, don't worry. Everyone should have learned about systems of linear equations:
-```{2x+4=2y,4x+8=4y}``
-Obviously, these two equations cannot be solved for a unique solution because the second equation is just twice the first equation. Therefore, we say that this equation does not carry enough information.
+## Project Conventions and Principles
+The following principles guide this project:
+- **Project principles:** First principles — “Return to the most basic axioms and facts of a subject, and reconstruct the inference process from scratch”; Occam's razor — “Do not multiply entities without necessity.”
+- **Explicit over implicit:** The project should present its underlying logic through clear, understandable structures and code whenever possible, rather than hiding principles behind clever tricks.
+- **Straightforward comments:** Avoid piling up terminology whenever possible. Prefer direct explanations and genuine reasoning. Keep in mind, however, that this may come at the cost of some formal rigor.
 
 ## Guide
-Next, you can go to [matrix.h](/include/matrix.h) to start your first learning. If you encounter any confusion during the learning process, it is recommended to ask AI, but please ensure that you can reproduce it without relying on AI. If you know how to use agents like Claude code or Codex, you can clone this project locally and input the following prompt: "Please help me analyze this project and tell me 1. How to learn this project 2. What is the structure of this project 3. What kind of people is this project suitable for learning."
+Next, you can open [matrix.h](/include/matrix.h) to begin your first lesson. If you encounter difficulties while studying, asking AI for help is recommended, but please make sure you can reproduce the result without relying on AI. If you know how to use agents such as Claude Code or Codex, you can clone this project locally and enter the following prompt:
+
+> Please help me analyze this project and tell me: 1. How should I learn this project? 2. What is the structure of this project? 3. What kind of people is this project suitable for learning?
