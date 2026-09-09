@@ -41,13 +41,23 @@ Tensor::Tensor(const std::vector<int64_t> &shape)
         bool issafe = safe_multiply(strides_[j], shape_[j], strides_[j-1]);
         if(!issafe) throw poerror::OverflowException("Numeric overflow");
     }
-// calloc和malloc类似，不同的是，一个是参入的参数不一样，分别是数据的数量和单个数据大小，另一个是默认所有元素填充为0
+    int64_t numel = this->numel();
+    if(numel > 0) {
+// 这里有一个很隐秘的边界条件: 在64位系统上，字节码的类型为size_t，其最大值为2^64-1，而numel的类型为2^63-1，但这么大的内存空间
+// 是不可能分配成功的，虽然我们实现了MemoryException来拦截这个问题，但我们忽略了numel与float所占内存空间大小的相乘，这里有两种
+// 解决方案，一种是在malloc之前进行判断，如果分配字节数会造成回环，则抛出OverflowException，如：
+// if(numel > std::numeric_limits<int64_t>::max()/sizeof(float)) throw poerror::OverflowException("Numeric overflow");
+// 第二种解决方案是使用safe_multiply，保证分配字节数严格在[0,INT64_MAX]，但实现逻辑稍繁琐一些，可读性也差一点，因此此处选择第一个方案
+// 第二种解决方案: 
+// int64_t allocateByte = 0;
+// bool issafe = safe_multiply(numel, sizeof(float), allocateByte);
+// if(!issafe) throw poerror::OverflowException("Numeric overflow");
+// data_ = static_cast<float*>(malloc(allocateByte)); 
+        if(numel > std::numeric_limits<int64_t>::max()/sizeof(float)) throw poerror::OverflowException("Numeric overflow");
 // 为什么使用static_cast而不使用(float*)?
 // （float*）是C语言风格，其权限很大，可能改变变量的const特性，甚至进行一些很危险的类型转换
 // 而static_cast则更加安全，并且它的功能在该场景下也能完全胜任，因此选择static_cast
-    int64_t numel = this->numel();
-    if(numel > 0) {
-        data_ = static_cast<float*>(calloc(numel, sizeof(float)));
+        data_ = static_cast<float*>(malloc(numel*sizeof(float)));
         if(data_ == nullptr) throw poerror::MemoryException("Memory allocation failed");
     }
 }
@@ -62,7 +72,8 @@ Tensor::Tensor(const std::vector<int64_t> &shape, float fill_data)
         if(!issafe) throw poerror::OverflowException("Numeric overflow");
     }
     int64_t numel = this->numel();
-    if(numel > 0) {
+    if(numel > 0) {   
+        if(numel > std::numeric_limits<int64_t>::max()/sizeof(float)) throw poerror::OverflowException("Numeric overflow");
         data_ = static_cast<float*>(malloc(numel*sizeof(float)));
         if(data_ == nullptr) throw poerror::MemoryException("Memory allocation failed");
         for(int64_t i=0; i<numel; ++i) {

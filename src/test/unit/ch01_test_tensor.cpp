@@ -1,6 +1,8 @@
-#include "gtest/gtest.h"
+#include <limits>
 #include <cstdint>
 #include <vector>
+#include <utility>
+#include "gtest/gtest.h"
 #include "tensor.h"
 #include "exceptions.h"
 
@@ -61,6 +63,12 @@ TEST(ConstructorFunction, SingleArgConstructor) {
     EXPECT_THROW(Tensor singleNegativeShapeTensor(negativeShape), poerror::DimensionException);
 }
 
+{
+// 数值溢出检测
+    std::vector<int64_t> overFlowShape{std::numeric_limits<int64_t>::max(), 2};
+    EXPECT_THROW(Tensor overFlowShapeTensor(overFlowShape), poerror::OverflowException);
+}
+
 }
 
 // ===================== DoubleArgConstructor =====================
@@ -74,6 +82,10 @@ TEST(ConstructorFunction, DoubleArgConstructor) {
     EXPECT_EQ(doubleArgTensor.numel(), 80);
     EXPECT_EQ(doubleArgTensor.shape(), (std::vector<int64_t>{2, 5, 8}));
     EXPECT_EQ(doubleArgTensor.strides(), (std::vector<int64_t>{5*8, 1*8, 1}));
+
+    for(int i=0; i<doubleArgTensor.numel(); ++i) {
+        EXPECT_EQ(doubleArgTensor.data()[i], 5);
+    }
 }
 
 {
@@ -117,17 +129,22 @@ TEST(ConstructorFunction, CopyConstrutor) {
     EXPECT_EQ(copyByNormalTensor.numel(), 4*7*9);
     EXPECT_EQ(copyByNormalTensor.shape(), (std::vector<int64_t>{4, 7, 9}));
     EXPECT_EQ(copyByNormalTensor.strides(), (std::vector<int64_t>{7*9, 1*9, 1}));
+
+    for(int i=0; i<copyByNormalTensor.numel(); ++i) {
+        EXPECT_EQ(copyByNormalTensor.data()[i], 24);
+        EXPECT_EQ(normalTensor.data()[i], 24);
+    }
 }
 
 {
 // 拷贝构造空对象
-    std::vector<int64_t> emptyShape;
-    Tensor emptyTensor(emptyShape);
+    std::vector<int64_t> empty;
+    Tensor emptyTensor(empty);
     Tensor copyByEmptyTensor(emptyTensor);
     EXPECT_EQ(copyByEmptyTensor.data(), nullptr);
     EXPECT_EQ(copyByEmptyTensor.numel(), 0);
-    EXPECT_EQ(copyByEmptyTensor.shape(), emptyShape);
-    EXPECT_EQ(copyByEmptyTensor.strides(), emptyShape);
+    EXPECT_EQ(copyByEmptyTensor.shape(), empty);
+    EXPECT_EQ(copyByEmptyTensor.strides(), empty);
 }
 
 {
@@ -160,6 +177,10 @@ TEST(ConstructorFunction, MoveConstructor) {
     EXPECT_EQ(moveByNormalTensor.numel(), originNumel);
     EXPECT_EQ(moveByNormalTensor.shape(), originShape);
     EXPECT_EQ(moveByNormalTensor.strides(), originStrides);
+
+    for(int i=0; i<moveByNormalTensor.numel(); ++i) {
+        EXPECT_EQ(moveByNormalTensor.data()[i], 24);
+    }
     
     std::vector<int64_t> empty;
     EXPECT_EQ(normalTensor.data(), nullptr);
@@ -168,4 +189,68 @@ TEST(ConstructorFunction, MoveConstructor) {
     EXPECT_EQ(normalTensor.strides(), empty);
 }
 
+{
+// 移动构造空对象
+    std::vector<int64_t> empty;
+    Tensor emptyTensor(empty);
+    Tensor moveByEmptyTensor(std::move(emptyTensor));
+    
+    EXPECT_EQ(moveByEmptyTensor.data(), nullptr);
+    EXPECT_EQ(moveByEmptyTensor.numel(), 0);
+    EXPECT_EQ(moveByEmptyTensor.shape(), empty);
+    EXPECT_EQ(moveByEmptyTensor.strides(), empty);
+
+    EXPECT_EQ(emptyTensor.data(), nullptr);
+    EXPECT_EQ(emptyTensor.numel(), 0);
+    EXPECT_EQ(emptyTensor.shape(), empty);
+    EXPECT_EQ(emptyTensor.strides(), empty);
 }
+
+{
+// 移动构造含0shape对象
+    std::vector<int64_t> containZeroShape{3, 0 ,2};
+    Tensor containZeroShapeTensor(containZeroShape);
+    Tensor moveByContainZeroShapeTensor(std::move(containZeroShapeTensor));
+
+    EXPECT_EQ(moveByContainZeroShapeTensor.data(), nullptr);
+    EXPECT_EQ(moveByContainZeroShapeTensor.numel(), 0);
+    EXPECT_EQ(moveByContainZeroShapeTensor.shape(), containZeroShape);
+    EXPECT_EQ(moveByContainZeroShapeTensor.strides(), (std::vector<int64_t>{0*2, 1*2, 1}));
+
+    EXPECT_EQ(containZeroShapeTensor.data(), nullptr);
+    EXPECT_EQ(containZeroShapeTensor.numel(), 0);
+    EXPECT_EQ(containZeroShapeTensor.shape(), (std::vector<int64_t>{}));
+    EXPECT_EQ(containZeroShapeTensor.strides(), (std::vector<int64_t>{}));
+}
+
+}
+
+// ===================== ShapeMethod =====================
+
+TEST(TensorMethod, ShapeMethod) {
+
+{
+// 测试: int64_t Tensor::shape(int64_t dim) const
+    Tensor testNormalShapeMethodTensor({4, 2, 19, 3});
+    EXPECT_EQ(testNormalShapeMethodTensor.shape(2), 19);
+    EXPECT_THROW(testNormalShapeMethodTensor.shape(100), poerror::DimensionException);
+    EXPECT_THROW(testNormalShapeMethodTensor.shape(-3), poerror::DimensionException);
+    Tensor testEmptyShapeMethodTensor{};
+    EXPECT_THROW(testEmptyShapeMethodTensor.shape(0), poerror::DimensionException);
+    Tensor testZeroShapeMethodTensor({32, 0, 3});
+    EXPECT_EQ(testZeroShapeMethodTensor.shape(1), 0);
+}
+
+}
+
+// ===================== DataMethod =====================
+TEST(TensorMethod, DataMethod) {
+
+{
+// 测试: float* Tensor::data()
+    Tensor testDataMethodTensor({3, 1, 2});
+    
+}
+
+}
+
