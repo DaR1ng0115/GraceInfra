@@ -234,13 +234,13 @@ Tensor& Tensor::operator=(Tensor&& other) noexcept {
 
 float& Tensor::operator()(int64_t idx0, int64_t idx1) {
     if(shape_.size() != 2 || idx0 < 0 || idx1 < 0 || idx0 >= shape_[0] || idx1 >= shape_[1])
-        throw poerror::GraceException("Unsupport temporarily");
+        throw poerror::DimensionException("Dimension mismatch or shape dimensions greater than 2");
     return data_[idx0*strides_[0] + idx1*strides_[1]];
 }
 
 const float& Tensor::operator()(int64_t idx0, int64_t idx1) const {
     if(shape_.size() != 2 || idx0 < 0 || idx1 < 0 || idx0 >= shape_[0] || idx1 >= shape_[1])
-        throw poerror::GraceException("Unsupport temporarily");
+        throw poerror::DimensionException("Dimension mismatch or shape dimensions greater than 2");
     return data_[idx0*strides_[0] + idx1*strides_[1]];
 }
 

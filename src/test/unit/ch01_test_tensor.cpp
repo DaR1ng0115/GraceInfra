@@ -83,7 +83,7 @@ TEST(ConstructorFunction, DoubleArgConstructor) {
     EXPECT_EQ(doubleArgTensor.shape(), (std::vector<int64_t>{2, 5, 8}));
     EXPECT_EQ(doubleArgTensor.strides(), (std::vector<int64_t>{5*8, 1*8, 1}));
 
-    for(int i=0; i<doubleArgTensor.numel(); ++i) {
+    for(int64_t i=0; i<doubleArgTensor.numel(); ++i) {
         EXPECT_EQ(doubleArgTensor.data()[i], 5);
     }
 }
@@ -130,7 +130,7 @@ TEST(ConstructorFunction, CopyConstrutor) {
     EXPECT_EQ(copyByNormalTensor.shape(), (std::vector<int64_t>{4, 7, 9}));
     EXPECT_EQ(copyByNormalTensor.strides(), (std::vector<int64_t>{7*9, 1*9, 1}));
 
-    for(int i=0; i<copyByNormalTensor.numel(); ++i) {
+    for(int64_t i=0; i<copyByNormalTensor.numel(); ++i) {
         EXPECT_EQ(copyByNormalTensor.data()[i], 24);
         EXPECT_EQ(normalTensor.data()[i], 24);
     }
@@ -178,7 +178,7 @@ TEST(ConstructorFunction, MoveConstructor) {
     EXPECT_EQ(moveByNormalTensor.shape(), originShape);
     EXPECT_EQ(moveByNormalTensor.strides(), originStrides);
 
-    for(int i=0; i<moveByNormalTensor.numel(); ++i) {
+    for(int64_t i=0; i<moveByNormalTensor.numel(); ++i) {
         EXPECT_EQ(moveByNormalTensor.data()[i], 24);
     }
     
@@ -244,12 +244,34 @@ TEST(TensorMethod, ShapeMethod) {
 }
 
 // ===================== DataMethod =====================
+
 TEST(TensorMethod, DataMethod) {
 
 {
 // 测试: float* Tensor::data()
-    Tensor testDataMethodTensor({3, 1, 2});
-    
+    Tensor testDataMethodTensor({3, 1});
+    testDataMethodTensor.data()[2] = 5;
+    EXPECT_EQ(testDataMethodTensor(2, 0), 5);
+}
+
+}
+
+// ===================== Operator =====================
+
+TEST(Operator, PlusOperator) {
+
+{
+    Tensor testPlusOperatorTensor_1({4, 2, 9, 2}, 3.50);
+    Tensor testPlusOperatorTensor_2({4, 2, 9, 2}, 1.92);
+    Tensor testPlusOperatorTensor_3({4, 2, 9, 2}, 10.412);
+    Tensor res_1 = testPlusOperatorTensor_1 + testPlusOperatorTensor_2;
+    for(int64_t i=0; i<res_1.numel(); ++i) {
+        EXPECT_EQ(res_1.data()[i], static_cast<float>(3.50+1.92));
+    }
+    Tensor res_2 = testPlusOperatorTensor_1 + testPlusOperatorTensor_2 + testPlusOperatorTensor_3;
+    for(int64_t i=0; i<res_2.numel(); ++i) {
+        EXPECT_EQ(res_2.data()[i], static_cast<float>(3.50+1.92+10.412));
+    }
 }
 
 }
