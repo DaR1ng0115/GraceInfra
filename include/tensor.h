@@ -45,6 +45,8 @@ private:
     std::vector<int64_t> shape_; 
     std::vector<int64_t> strides_;
     float* data_;
+    static bool safe_multiply(int64_t a, int64_t b, int64_t& result);
+    
 public:
 // 这里仿照了matrix类定义的格式，但将实际的行和列换成了shape数组
 // 同时由于我们选择了float*裸指针来描述tensor的数据，构造函数中会用到malloc来分配堆内存，因而需要完善析构函数的内容，
@@ -62,7 +64,6 @@ public:
     int64_t numel() const;
     float* data();
     const float* data() const;
-    static bool safe_multiply(int64_t a, int64_t b, int64_t& result);
 
     Tensor operator+(const Tensor& other) const;
     Tensor& operator=(const Tensor& other);

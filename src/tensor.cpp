@@ -4,7 +4,7 @@
 // 
 // Created by DaR1ng on 26-7-10
 
-#include <assert.h>
+#include <cassert>
 #include <algorithm>
 #include <cstdint>
 #include <utility>
@@ -161,13 +161,12 @@ const float* Tensor::data() const {
 }
 
 bool Tensor::safe_multiply(int64_t a, int64_t b, int64_t& result) {
-    if(a>0) {
+    if(a>0 && b != 0) {
         if(b>0 && a > std::numeric_limits<int64_t>::max() / b) return false;
-        if(b<0 && a < std::numeric_limits<int64_t>::min() / b) return false;
     }
-    if(a<0) {
-        if(b>0 && a < std::numeric_limits<int64_t>::min() / b) return false;
-        if(b<0 && a > std::numeric_limits<int64_t>::max() / b) return false;
+    if(b == 0) {
+        result = 0;
+        return true;
     }
     result = a*b;
     return true;
@@ -188,8 +187,6 @@ Tensor& Tensor::operator=(const Tensor& other) {
     int64_t numel = this->numel();
     if(shape_ == other.shape() && numel != 0 && other.numel() != 0) {
         std::copy(other.data(), other.data()+other.numel(), data_);
-        assert(strides_ == other.strides());
-        assert(numel == other.numel());
     }
     else {
         Tensor temp(other);
@@ -226,13 +223,13 @@ Tensor& Tensor::operator=(Tensor&& other) noexcept {
 
 float& Tensor::operator()(int64_t idx0, int64_t idx1) {
     if(shape_.size() != 2 || idx0 < 0 || idx1 < 0 || idx0 >= shape_[0] || idx1 >= shape_[1])
-        throw poerror::AppException("Unsupport temporarily");
+        throw poerror::GraceException("Unsupport temporarily");
     return data_[idx0*strides_[0] + idx1*strides_[1]];
 }
 
 const float& Tensor::operator()(int64_t idx0, int64_t idx1) const {
     if(shape_.size() != 2 || idx0 < 0 || idx1 < 0 || idx0 >= shape_[0] || idx1 >= shape_[1])
-        throw poerror::AppException("Unsupport temporarily");
+        throw poerror::GraceException("Unsupport temporarily");
     return data_[idx0*strides_[0] + idx1*strides_[1]];
 }
 

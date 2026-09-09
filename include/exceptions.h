@@ -6,36 +6,26 @@
 
 #pragma once
 
-#include <exception>
-#include <string>
+#include <stdexcept>
 
 namespace poerror {
-    class AppException : public std::exception {
-    private:
-        std::string msg_;
+    class GraceException : public std::runtime_error {
     public:
-        explicit AppException(const std::string& msg)
-        :msg_(msg) {}
-        const char * what() const noexcept override {
-            return msg_.c_str();
-        }
+        using std::runtime_error::runtime_error;
     };
 
-    class MemoryException : public AppException {
+    class MemoryException : public GraceException {
     public:
-        explicit MemoryException(const std::string& msg)
-        :AppException(msg) {}
+        using GraceException::GraceException;
     };
 
-    class DimensionException : public AppException {
+    class DimensionException : public GraceException {
     public:
-        explicit DimensionException(const std::string& msg)
-        :AppException(msg) {}
+        using GraceException::GraceException;
     };
 
-    class OverflowException : public AppException {
+    class OverflowException : public GraceException {
     public:
-        explicit OverflowException(const std::string& msg)
-        :AppException(msg) {}
+        using GraceException::GraceException;
     };
 }

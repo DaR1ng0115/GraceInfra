@@ -9,33 +9,41 @@
 在本章中，我会尽可能显式写出“this”，以便于理解，后续我会省略
 */
 
-#include "matrix.h"
 #include <cassert>
+#include "matrix.h"
+#include "exceptions.h"
 
 // 在命名上，我们可以让数据结构自带的私有成员变量属性带有下标，即variable_
 // 这样做可以让自己包括其他人更好地理解哪些变量是本对象的变量
 
+// 在本框架中，我们约定:
+// 空对象: rows(0), cols(0), data(空vector对象)
 Matrix::Matrix() 
-:rows_(1), cols_(1) {
-    this->data_ = std::vector<float>(1);
-}
+:rows_(0), cols_(0), data_(std::vector<float>()) {}
 
 // 这里也可以使用更简单一点的初始化方法，直接在初始化列表中data_(rows*cols)
-
+// 从此处开始，我们将定义自定义的异常体系，第一章将只使用throw语句，后续逐步引入try-catch语句
+// 异常实现在./include/exceptions.h，由于异常的实现较简单直观，以继承runtime_error为核心，因此直接使用头文件实现
+// 拓: 什么是runtime_error?
+// 
 Matrix::Matrix(int rows, int cols)
 :rows_(rows), cols_(cols) {
+    if(rows <0 || cols<0) throw poerror::DimensionException("Illegal Dimensions");
     this->data_ = std::vector<float>(this->rows_*this->cols_);
 }
 
 Matrix::Matrix(int rows, int cols, float fill_data)
 :rows_(rows), cols_(cols) {
+    if(rows <0 || cols<0) throw poerror::DimensionException("Illegal Dimensions");
     this->data_ = std::vector<float>(this->rows_*this->cols_, fill_data);
 }
 
 Matrix::Matrix(const Matrix& other) 
 :rows_(other.rows()), cols_(other.cols()) {
-    this -> data_ = std::vector<float>(this->rows_*this->cols_);
-    std::copy(other.data_.begin(), other.data_.end(), data_.data());
+    this->data_ = std::vector<float>(this->rows_*this->cols_);
+    if(this->rows_ != 0 && this->cols_ != 0) {
+        std::copy(other.data_.begin(), other.data_.end(), data_.data());
+    }
 }
 
 // 下面实现了一些接口函数，请读者进行这样的思考:成员变量中有哪些需要对外提供接口？对外暴露的接口在逻辑上应该是只读还是可修改的？
@@ -49,7 +57,7 @@ int Matrix::cols() const {
     return this->cols_;
 }
 
-// 此处我特意选择了length作为方法的名称，因为其专指matrix的“长度”，即无论是几维的matrix，压平成一维数组后的长度
+// 此处选择了numel作为方法的名称，其含义是number of elements,即元素数量
 
 int Matrix::numel() const {
     return this->data_.size();

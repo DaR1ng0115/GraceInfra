@@ -15,7 +15,7 @@ TEST(ConstructorFunction, DefaultConstructor) {
     EXPECT_EQ(defaultTensor.numel(), 0);
     EXPECT_EQ(defaultTensor.shape(), std::vector<int64_t>());
     EXPECT_EQ(defaultTensor.strides(), std::vector<int64_t>());
-    EXPECT_THROW(defaultTensor(0, 0), poerror::AppException);
+    EXPECT_THROW(defaultTensor(0, 0), poerror::GraceException);
 }
 
 }
