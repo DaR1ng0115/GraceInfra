@@ -12,6 +12,8 @@
 #include <cassert>
 #include "matrix.h"
 #include "exceptions.h"
+#include <algorithm>
+#include <utility>
 
 // 在命名上，我们可以让数据结构自带的私有成员变量属性带有下标，即variable_
 // 这样做可以让自己包括其他人更好地理解哪些变量是本对象的变量
@@ -59,7 +61,7 @@ int Matrix::cols() const {
 
 // 此处选择了numel作为方法的名称，其含义是number of elements,即元素数量
 
-int Matrix::numel() const {
+size_t Matrix::numel() const {
     return this->data_.size();
 }
 
@@ -93,7 +95,7 @@ const float* Matrix::data() const {
 // 移动语义和移动构造的实现，详见tensor.cpp
 
 Matrix Matrix::operator+(const Matrix &other) const {
-    assert(this->rows() == other.rows() && this->cols() == other.cols());
+    if(this->rows_ != other.rows_ || this->cols_ != other.cols_) throw poerror::DimensionException("Dimensions mismatch");
     Matrix res(this->rows(), this->cols());
     for(int i=0; i<this->numel(); ++i) {
         res.data()[i] = this->data_[i] + other.data()[i];
@@ -104,9 +106,9 @@ Matrix Matrix::operator+(const Matrix &other) const {
 Matrix& Matrix::operator=(const Matrix &other) {
     if(this == &other) return *this;
     Matrix temp(other);
-    this->rows_ = other.rows();
-    this->cols_ = other.cols();
-    this->data_ = std::move(temp.data_);
+    std::swap(this->rows_, temp.rows_);
+    std::swap(this->cols_, temp.cols_);
+    std::swap(this->data_, temp.data_);
     return *this;
 }
 
@@ -128,13 +130,21 @@ Matrix& Matrix::operator=(const Matrix &other) {
 // 想访问的数据，翻译成数学语言，也就是:rows_idx*cols_ + cols_idx
 
 float& Matrix::operator()(int rows_idx, int cols_idx) {
-    assert(rows_idx>=0 && cols_idx>=0 && rows_idx<this->rows_ && cols_idx<this->cols_);
-    return this->data_[rows_idx*this->cols_+cols_idx];
+    if(rows_idx>=0 && cols_idx>=0 && rows_idx<this->rows_ && cols_idx<this->cols_) {
+        return this->data_[rows_idx*this->cols_+cols_idx];
+    }
+    else {
+        throw poerror::DimensionException("Illegal Dimensions");
+    }
 }
 
 const float& Matrix::operator()(int rows_idx, int cols_idx) const {
-    assert(rows_idx>=0 && cols_idx>=0 && rows_idx<this->rows_ && cols_idx<this->cols_);
-    return this->data_[rows_idx*this->cols_+cols_idx];
+    if(rows_idx>=0 && cols_idx>=0 && rows_idx<this->rows_ && cols_idx<this->cols_) {
+        return this->data_[rows_idx*this->cols_+cols_idx];
+    }
+    else {
+        throw poerror::DimensionException("Illegal Dimensions");
+    }
 }
 
 /*

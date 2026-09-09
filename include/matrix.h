@@ -14,10 +14,9 @@
 */
 
 #pragma once
+#include <cstddef>
 #include <vector>
 #include <cstdlib>
-#include <algorithm>
-#include <utility>
 
 class Matrix {
 private:
@@ -42,7 +41,7 @@ public:
 
     int rows() const;
     int cols() const;
-    int numel() const;
+    size_t numel() const;
     float* data();
     const float* data() const;
 
