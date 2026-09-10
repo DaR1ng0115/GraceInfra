@@ -114,6 +114,12 @@ TEST(ConstructorFunction, DoubleArgConstructor) {
     EXPECT_THROW(Tensor doubleNegativeShapeTensor(negativeShape, 10), poerror::DimensionException);
 }
 
+{
+// 数值溢出检测
+    std::vector<int64_t> overFlowShape{std::numeric_limits<int64_t>::max(), 2};
+    EXPECT_THROW(Tensor overFlowShapeTensor(overFlowShape, 9.5), poerror::OverflowException);
+}
+
 }
 
 // ===================== CopyConstructor =====================
@@ -134,6 +140,9 @@ TEST(ConstructorFunction, CopyConstrutor) {
         EXPECT_EQ(copyByNormalTensor.data()[i], 24);
         EXPECT_EQ(normalTensor.data()[i], 24);
     }
+// 测试深拷贝
+    normalTensor.data()[3] = 8;
+    EXPECT_EQ(copyByNormalTensor.data()[3], 8);
 }
 
 {
@@ -265,14 +274,90 @@ TEST(Operator, PlusOperator) {
     Tensor testPlusOperatorTensor_2({4, 2, 9, 2}, 1.92);
     Tensor testPlusOperatorTensor_3({4, 2, 9, 2}, 10.412);
     Tensor res_1 = testPlusOperatorTensor_1 + testPlusOperatorTensor_2;
+// 对于浮点数，单纯使用EXPECT_EQ会有精度损失，导致测试失败，故使用EXPECT_FLOAT_EQ
     for(int64_t i=0; i<res_1.numel(); ++i) {
-        EXPECT_EQ(res_1.data()[i], static_cast<float>(3.50+1.92));
+        EXPECT_FLOAT_EQ(res_1.data()[i], 3.50+1.92);
     }
     Tensor res_2 = testPlusOperatorTensor_1 + testPlusOperatorTensor_2 + testPlusOperatorTensor_3;
     for(int64_t i=0; i<res_2.numel(); ++i) {
-        EXPECT_EQ(res_2.data()[i], static_cast<float>(3.50+1.92+10.412));
+        EXPECT_FLOAT_EQ(res_2.data()[i], 3.50+1.92+10.412);
     }
 }
 
 }
+
+// ===================== CopyEqualOperator =====================
+
+TEST(Operator, CopyEqualOperator) {
+
+{
+    Tensor normalTensor({2, 3}, 2.5);
+    Tensor emptyTensor{};
+    Tensor containZeroTensor({2, 0, 5});
+
+    Tensor copyEqualTensor_normal({3, 2}, 1.2);
+    Tensor copyEqualTensor_empty({2, 3, 0});
+    Tensor copyEqualTensor_zero({1, 3, 2, 5});
+
+    copyEqualTensor_normal = normalTensor;
+    copyEqualTensor_empty = emptyTensor;
+    copyEqualTensor_zero = containZeroTensor;
+
+    EXPECT_NE(copyEqualTensor_normal.data(), nullptr);
+    EXPECT_EQ(copyEqualTensor_normal.numel(), 2*3);
+    EXPECT_EQ(copyEqualTensor_normal.shape(), (std::vector<int64_t>{2, 3}));
+    EXPECT_EQ(copyEqualTensor_normal.strides(), (std::vector<int64_t>{3, 1}));
+    for(int64_t i=0; i<copyEqualTensor_normal.numel(); ++i) {
+        EXPECT_EQ(copyEqualTensor_normal.data()[i], 2.5);
+    }
+
+    EXPECT_EQ(copyEqualTensor_empty.data(), nullptr);
+    EXPECT_EQ(copyEqualTensor_empty.numel(), 0);
+    EXPECT_EQ(copyEqualTensor_empty.shape(), (std::vector<int64_t>{}));
+    EXPECT_EQ(copyEqualTensor_empty.strides(), (std::vector<int64_t>{}));
+
+    EXPECT_EQ(copyEqualTensor_zero.data(), nullptr);
+    EXPECT_EQ(copyEqualTensor_zero.numel(), 0);
+    EXPECT_EQ(copyEqualTensor_zero.shape(), (std::vector<int64_t>{2, 0, 5}));
+    EXPECT_EQ(copyEqualTensor_zero.strides(), (std::vector<int64_t>{0*5, 1*5, 1}));
+}
+
+}
+
+//  ===================== MoveEqualOperator =====================
+
+TEST(Operator, MoveEqualOperator) {
+
+{
+    Tensor normalTensor({3, 5, 2}, 9.2);
+    Tensor emptyTensor{};
+    Tensor containZeroTensor({3, 0, 4});
+
+    Tensor moveEqualTensor_normal({2,3}, 2.9);
+    Tensor moveEqualTensor_empty({4, 2, 12}, 4.20);
+    Tensor moveEqualTensor_zero({2}, 2.3);
+
+    moveEqualTensor_normal = std::move(normalTensor);
+    moveEqualTensor_empty = std::move(emptyTensor);
+    moveEqualTensor_zero = std::move(containZeroTensor);
+
+    EXPECT_NE(moveEqualTensor_normal.data(), nullptr);
+    EXPECT_EQ(moveEqualTensor_normal.numel(), 3*5*2);
+    EXPECT_EQ(moveEqualTensor_normal.shape(), (std::vector<int64_t>{3, 5, 2}));
+    EXPECT_EQ(moveEqualTensor_normal.strides(), (std::vector<int64_t>{5*2, 1*2, 1}));
+
+    EXPECT_EQ(moveEqualTensor_empty.data(), nullptr);
+    EXPECT_EQ(moveEqualTensor_empty.numel(), 0);
+    EXPECT_EQ(moveEqualTensor_empty.shape(), (std::vector<int64_t>{}));
+    EXPECT_EQ(moveEqualTensor_empty.strides(), (std::vector<int64_t>{}));
+
+    EXPECT_EQ(moveEqualTensor_zero.data(), nullptr);
+    EXPECT_EQ(moveEqualTensor_zero.numel(), 0);
+    EXPECT_EQ(moveEqualTensor_zero.shape(), (std::vector<int64_t>{3, 0, 4}));
+    EXPECT_EQ(moveEqualTensor_zero.strides(), (std::vector<int64_t>{0*4, 1*4, 1}));
+}
+
+}
+
+
 
