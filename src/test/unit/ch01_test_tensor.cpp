@@ -124,7 +124,7 @@ TEST(ConstructorFunction, DoubleArgConstructor) {
 
 // ===================== CopyConstructor =====================
 
-TEST(ConstructorFunction, CopyConstrutor) {
+TEST(ConstructorFunction, CopyConstructor) {
 
 {
 // 拷贝构造正常对象
@@ -142,7 +142,7 @@ TEST(ConstructorFunction, CopyConstrutor) {
     }
 // 测试深拷贝
     normalTensor.data()[3] = 8;
-    EXPECT_EQ(copyByNormalTensor.data()[3], 8);
+    EXPECT_EQ(copyByNormalTensor.data()[3], 24);
 }
 
 {

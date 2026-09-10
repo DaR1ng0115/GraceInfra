@@ -9,9 +9,9 @@ GraceInfra是一个以*教学*为主的从零开始的深度学习训练推理�
 因此，如果你只是想了解*自动微分*,*计算图*,*Transformer原理*，那么你可以选择其他的更优秀的项目，例如karpathy/micrograd或tinygrad。 
 如果你希望*用C++来训练一个大模型*,*知道pytorch的内部在干什么*,*学习数据结构，计算机组成原理，计算机体系结构在编程中的具体应用*  
 那么这个项目是不二之选。
-同时，这个项目的跨度会很大，如果你是大三/大四/研二的学长学姐，或者以找工作为导向的，可以去看看AIInfraGuide，这个项目学习时间会更短。  
+同时，这个项目的跨度会很大，如果你是大三/大四/研二的学长学姐，或者以找工作为导向的，不建议学习该项目。  
 因此，这个项目更推荐*真正感兴趣*的人学习。
-由于我是一个学生，因此项目中难免会出现bug，纰漏，不严谨甚至错误，希望大家可以多多担待，我也乐意接受大家的批评指正。
+由于我是一个学生，因此项目中难免会出现bug，纰漏，不严谨甚至错误，希望大家可以多多担待，我也乐意接受大家的批评指正，欢迎大家提出issue或PR。
 
 在这一章，我们聚焦于:
 - 工程规范
@@ -30,11 +30,13 @@ GraceInfra是一个以*教学*为主的从零开始的深度学习训练推理�
 通用的一个模式是，源文件(.cpp/.cxx)放在src文件夹内，头文件(.h/.hpp)放在include文件夹内。
 其中，src和include文件夹可以按照功能再分类，比如utils(工具)，config(配置文件)等等，你可以按需创建，本项目会给出尽可能规范的文件分类
 每个文件的开头，你也可以参考我的模式:
+```cpp
 // 
 // filename.cpp
 // ProjectName
 // 
 // Created by username on xx-xx-xx
+```
 
 ## 项目约定&守则
 此处约定了该项目的一些守则。
@@ -43,5 +45,6 @@ GraceInfra是一个以*教学*为主的从零开始的深度学习训练推理�
 - 直白的注释：尽可能避免堆砌术语，展示直白的解释和真实的思维逻辑，但请注意，代价是缺失部分严谨性
 
 ## 导读
-接下来，你可以进入[matrix.h](/include/matrix.h)，开始你的第一次学习，如若学习过程中有困惑，建议询问AI，但请保证自己在不依赖AI的情况下复现。如果你会使用Claude code或Codex等agent，你可以将本项目clone到本地，并输入以下提示词"请帮我分析这个项目，告诉我1.如何学习该项目 2.该项目的结构是怎么样的 3.这个项目适合怎么样的人学习"
+[matrix.h](/include/matrix.h) -> [matrix.cpp](/src/matrix.cpp) & [exception.h](/include/exceptions.h) -> [tensor.h](/include/tensor.h) -> [tensor.cpp](/src/tensor.cpp) -> [CMake_configuration_build.md](/doc/zh/CMake_configuration_build.zh.md) -> [doc_googletest.md](/doc/zh/doc_googletest.md) -> [doc_ch01_test_tensor.zh.md](/doc/zh/doc_ch01_test_tensor.zh.md)  
+接下来，你可以进入[matrix.h](/include/matrix.h)，开始你的第一次学习，可以先通读代码，理解整体结构和逻辑，随后对照注释进行理解。
 

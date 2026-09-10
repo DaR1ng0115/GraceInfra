@@ -23,11 +23,10 @@
 Matrix::Matrix() 
 :rows_(0), cols_(0), data_(std::vector<float>()) {}
 
-// 这里也可以使用更简单一点的初始化方法，直接在初始化列表中data_(rows*cols)
 // 从此处开始，我们将定义自定义的异常体系，第一章将只使用throw语句，后续逐步引入try-catch语句
 // 异常实现在./include/exceptions.h，由于异常的实现较简单直观，以继承runtime_error为核心，因此直接使用头文件实现
 // 拓: 什么是runtime_error?
-// 
+// runtime_error是C++标准库中的一个异常类，定义于头文件<stdexcept>中，这个异常类代表在程序运行阶段才能检测到的错误
 Matrix::Matrix(int rows, int cols)
 :rows_(rows), cols_(cols) {
     if(rows <0 || cols<0) throw poerror::DimensionException("Illegal Dimensions");
@@ -47,9 +46,6 @@ Matrix::Matrix(const Matrix& other)
         std::copy(other.data_.begin(), other.data_.end(), data_.data());
     }
 }
-
-// 下面实现了一些接口函数，请读者进行这样的思考:成员变量中有哪些需要对外提供接口？对外暴露的接口在逻辑上应该是只读还是可修改的？
-// 如果对const的使用上有一些困惑，建议阅读《Effective C++》条款03:尽可能使用const
 
 int Matrix::rows() const {
     return this->rows_;
