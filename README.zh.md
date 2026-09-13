@@ -45,6 +45,6 @@ GraceInfra是一个以*教学*为主的从零开始的深度学习训练推理�
 - 直白的注释：尽可能避免堆砌术语，展示直白的解释和真实的思维逻辑，但请注意，代价是缺失部分严谨性
 
 ## 导读
-[matrix.h](/include/matrix.h) -> [matrix.cpp](/src/matrix.cpp) & [exception.h](/include/exceptions.h) -> [tensor.h](/include/tensor.h) -> [tensor.cpp](/src/tensor.cpp) -> [CMake_configuration_build.md](/doc/zh/CMake_configuration_build.zh.md) -> [doc_googletest.md](/doc/zh/doc_googletest.md) -> [doc_ch01_test_tensor.zh.md](/doc/zh/doc_ch01_test_tensor.zh.md)  
+[matrix.h](/include/matrix.h) -> [matrix.cpp](/src/matrix.cpp) & [exceptions.h](/include/exceptions.h) -> [tensor.h](/include/tensor.h) -> [tensor.cpp](/src/tensor.cpp) -> [CMake_configuration_build.md](/doc/zh/CMake_configuration_build.zh.md) -> [doc_googletest.md](/doc/zh/doc_googletest.md) -> [doc_ch01_test_tensor.zh.md](/doc/zh/doc_ch01_test_tensor.zh.md)  
 接下来，你可以进入[matrix.h](/include/matrix.h)，开始你的第一次学习，可以先通读代码，理解整体结构和逻辑，随后对照注释进行理解。
 

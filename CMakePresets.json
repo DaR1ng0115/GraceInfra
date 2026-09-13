@@ -3,13 +3,54 @@
     "configurePresets": [
         {
             "name": "test",
-            "binaryDir": "${sourceDir}/build",
+            "binaryDir": "${sourceDir}/build/test",
+            "generator": "Ninja",
             "cacheVariables": {
-                "ENABLE_TEST": "ON"
+                "ENABLE_TEST": "ON",
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+
+        {
+            "name": "testWithASan",
+            "binaryDir": "${sourceDir}/build/testWithASan",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "ENABLE_TEST": "ON",
+                "ENABLE_ASAN": "ON",
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            }
+        },
+
+        {
+            "name": "main",
+            "binaryDir": "${sourceDir}/build/main",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "ENABLE_MAIN": "ON"
+            }
+        },
+
+        {
+            "name": "perf",
+            "binaryDir": "${sourceDir}/build/perf",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "ENABLE_PERF": "ON",
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "clangd",
+            "binaryDir": "${sourceDir}/build/clangd",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "ENABLE_MAIN": "ON",
+                "ENABLE_TEST": "ON",
+                "ENABLE_ASAN": "ON",
+                "ENABLE_PERF": "ON"
             }
         }
     ]
-
-        
 }
 

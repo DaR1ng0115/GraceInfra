@@ -3,3 +3,6 @@
 .DS_Store
 CLAUDE.md
 /.cache
+perf_tensor.json
+.clangd
+launch_perf.bat
