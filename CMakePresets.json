@@ -1,0 +1,15 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "test",
+            "binaryDir": "${sourceDir}/build",
+            "cacheVariables": {
+                "ENABLE_TEST": "ON"
+            }
+        }
+    ]
+
+        
+}
+
