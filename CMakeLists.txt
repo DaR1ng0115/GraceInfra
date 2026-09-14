@@ -7,6 +7,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # 自动生成 compile_commands.json
 
+if (POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
+
 # 编译目标选项
 option(ENABLE_MAIN "配置main程序" OFF)
 option(ENABLE_TEST "配置test程序" OFF)

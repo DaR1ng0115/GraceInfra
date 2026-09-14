@@ -76,8 +76,9 @@ Tensor::Tensor(const std::vector<int64_t> &shape, float fill_data)
         if(numel > std::numeric_limits<int64_t>::max()/sizeof(float)) throw poerror::OverflowException("Numeric overflow");
         data_ = static_cast<float*>(malloc(numel*sizeof(float)));
         if(data_ == nullptr) throw poerror::MemoryException("Memory allocation failed");
+        float* __restrict__ p = data_;
         for(int64_t i=0; i<numel; ++i) {
-            data_[i] = fill_data;
+            p[i] = fill_data;
         }
     }
 }
