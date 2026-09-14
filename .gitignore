@@ -6,3 +6,5 @@ CLAUDE.md
 perf_tensor.json
 .clangd
 launch_perf.bat
+compile_commands.json
+launch_perf.sh

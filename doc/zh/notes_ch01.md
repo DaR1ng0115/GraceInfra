@@ -45,6 +45,10 @@ SUMMARY: AddressSanitizer: bad-free (C:\WINDOWS\SYSTEM32\ucrtbased.dll+0x1800804
       --gtest_filter=NoSuchTest `
       --gtest_color=no
 ```
-依然报相同的错误，这段命令意思是使用一个不存在的过滤器，即运行空测试，结果依然报错，这说明测试代码本身是没有问题的，问题出在外部。最后gpt推测是
-Windows下的LLVM ASan和Debug CRT(调试运行库)不兼容，简单来说，ASan和Debug CRT均在监测内存数据，但它们在这个过程中"打架"冲突了，解决办法就是使
-用RelWithDebInfo模式进行配置，在这个模式下链接的是Release CRT，也就避免了兼容性问题。
+依然报相同的错误，这段命令意思是使用一个不存在的过滤器，即运行空测试，结果依然报错，这说明测试代码本身是没有问题的，问题出在外部。最后gpt推测是Windows下的LLVM ASan和Debug CRT(调试运行库)不兼容，简单来说，ASan和Debug CRT均在监测内存数据，但它们在这个过程中"打架"冲突了，解决办法就是使用RelWithDebInfo模式进行配置，在这个模式下链接的是Release CRT，也就避免了兼容性问题。
+
+## 2026-9-14
+今天在实现性能测试，覆盖了默认构造函数，单参数构造函数和双参数构造函数。不过在双参数构造函数这里出现了有趣的现象，tensor在该项目上显著慢
+于(大概3倍)matrix，于是我生成了汇编文件，发现tensor该部分是标量填充，没有向量化，随后我使用了clang++分析了编译，输出表明确实没有向量
+化，原因是cannot identify array bounds(无法识别数组边界)，不过解决的办法却看起来很矛盾:float* __restrict__ p = data_;定义一个局部变量和数组边界有什么关系呢？我猜测原因可能是由于限定了在p的生命周期内，只会通过p来访问其所指向的内存，既然没有别的修改途径，那么编译器就认为这个数组边界确定了，因此可以进行向量化。  
+但更有意思的是，在未加float* __restrict__ p = data_;的情况下，Windows上运行，使用clang++ -O3编译，循环未向量化，而在我的Mac上面，使用的AppleClang 21.0.0，却向量化了，说明即便都是clang++编译器，在不同的平台上表现也会截然不同。
