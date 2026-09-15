@@ -107,7 +107,7 @@ if(ENABLE_PERF)
     FetchContent_Declare(
         googlebenchmark
         GIT_REPOSITORY https://github.com/google/benchmark.git
-        GIT_TAG        main
+        GIT_TAG        1.9.5
     )
 
     set(BENCHMARK_ENABLE_TESTING off CACHE BOOL "" FORCE)

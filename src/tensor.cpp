@@ -96,6 +96,7 @@ Tensor::Tensor(const Tensor& other)
 :shape_(other.shape()), strides_(other.strides()), data_(nullptr) {
 // 判定空对象和无元素对象
     if(other.numel() != 0) {
+        if(this->numel() > std::numeric_limits<int64_t>::max()/sizeof(float)) throw poerror::OverflowException("Numeric overflow");
         data_ = static_cast<float*>(malloc(this->numel()*sizeof(float)));
         if(data_ == nullptr) throw poerror::MemoryException("Memory allocation failed");
         std::copy(other.data(), other.data()+other.numel(), data_);
