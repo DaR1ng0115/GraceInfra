@@ -15,7 +15,7 @@
 #include "matrix.h"
 #include <cstdint>
 
-static void DISABLED_BM_DefaultConstructTensor(benchmark::State& state) {
+static void BM_DefaultConstructTensor(benchmark::State& state) {
     for(auto _ : state) {
         Tensor defaultTensor{};
 
@@ -23,10 +23,10 @@ static void DISABLED_BM_DefaultConstructTensor(benchmark::State& state) {
     }
 }
 
-BENCHMARK(DISABLED_BM_DefaultConstructTensor)
+BENCHMARK(BM_DefaultConstructTensor)
     ->Repetitions(10);
 
-static void DISABLED_BM_DefaultConstructMatrix(benchmark::State& state) {
+static void BM_DefaultConstructMatrix(benchmark::State& state) {
     for(auto _ : state) {
         Matrix defaultMatrix{};
 
@@ -34,10 +34,10 @@ static void DISABLED_BM_DefaultConstructMatrix(benchmark::State& state) {
     }
 }
 
-BENCHMARK(DISABLED_BM_DefaultConstructMatrix)
+BENCHMARK(BM_DefaultConstructMatrix)
     ->Repetitions(10);
 
-static void DISABLED_BM_SingleArgConstructTensor(benchmark::State& state) {
+static void BM_SingleArgConstructTensor(benchmark::State& state) {
     for(auto _ : state) {
         Tensor signgleArgTensor({128, 64});
 
@@ -45,10 +45,10 @@ static void DISABLED_BM_SingleArgConstructTensor(benchmark::State& state) {
     }
 }
 
-BENCHMARK(DISABLED_BM_SingleArgConstructTensor)
+BENCHMARK(BM_SingleArgConstructTensor)
     ->Repetitions(10);
 
-static void DISABLED_BM_SingleArgConstructMatrix(benchmark::State& state) {
+static void BM_SingleArgConstructMatrix(benchmark::State& state) {
     for(auto _ : state) {
         Matrix singleArgMatrix(128, 64);
 
@@ -56,7 +56,7 @@ static void DISABLED_BM_SingleArgConstructMatrix(benchmark::State& state) {
     }
 }
 
-BENCHMARK(DISABLED_BM_SingleArgConstructMatrix)
+BENCHMARK(BM_SingleArgConstructMatrix)
     ->Repetitions(10);
 
 static void BM_FillDataConstructTensor_4KiB(benchmark::State& state) {
@@ -204,7 +204,7 @@ static void BM_FillDataConstructMatrix_128KiB(benchmark::State& state) {
 BENCHMARK(BM_FillDataConstructMatrix_128KiB)
     ->Repetitions(10);
 
-static void DISABLED_BM_CopyConstructTensor(benchmark::State& state) {
+static void BM_CopyConstructTensor(benchmark::State& state) {
     Tensor tensor({256, 128}, 1.0f);
     for(auto _ : state) {
         Tensor copyTensor(tensor);
@@ -213,10 +213,10 @@ static void DISABLED_BM_CopyConstructTensor(benchmark::State& state) {
     }
 }
 
-BENCHMARK(DISABLED_BM_CopyConstructTensor)
+BENCHMARK(BM_CopyConstructTensor)
     ->Repetitions(10);
 
-static void DISABLED_BM_CopyConstructMatrix(benchmark::State& state) {
+static void BM_CopyConstructMatrix(benchmark::State& state) {
     Matrix matrix(256, 128, 1.0f);
     for(auto _ : state) {
         Matrix copyMatrix(matrix);
@@ -225,7 +225,91 @@ static void DISABLED_BM_CopyConstructMatrix(benchmark::State& state) {
     }
 }
 
-BENCHMARK(DISABLED_BM_CopyConstructMatrix)
+BENCHMARK(BM_CopyConstructMatrix)
+    ->Repetitions(10);
+
+static void BM_AddOperatorTensor_4KiB(benchmark::State& state) {
+    Tensor tensor_1({32, 32}, 2.0f);
+    Tensor tensor_2({32, 32}, 4.0f);
+    Tensor tensor_3;
+    for(auto _ : state) {
+        tensor_3 = tensor_1 + tensor_2;
+
+        benchmark::DoNotOptimize(tensor_3);
+    }
+}
+
+BENCHMARK(BM_AddOperatorTensor_4KiB)
+    ->Repetitions(10);
+
+static void BM_AddOperatorTensor_8KiB(benchmark::State& state) {
+    Tensor tensor_1({64, 32}, 2.0f);
+    Tensor tensor_2({64, 32}, 4.0f);
+    Tensor tensor_3;
+    for(auto _ : state) {
+        tensor_3 = tensor_1 + tensor_2;
+
+        benchmark::DoNotOptimize(tensor_3);
+    }
+}
+
+BENCHMARK(BM_AddOperatorTensor_8KiB)
+    ->Repetitions(10);
+
+static void BM_AddOperatorTensor_16KiB(benchmark::State& state) {
+    Tensor tensor_1({64, 64}, 2.0f);
+    Tensor tensor_2({64, 64}, 4.0f);
+    Tensor tensor_3;
+    for(auto _ : state) {
+        tensor_3 = tensor_1 + tensor_2;
+
+        benchmark::DoNotOptimize(tensor_3);
+    }
+}
+
+BENCHMARK(BM_AddOperatorTensor_16KiB)
+    ->Repetitions(10);
+
+static void BM_AddOperatorMatrix_4KiB(benchmark::State& state) {
+    Matrix matrix_1(32, 32, 2.0f);
+    Matrix matrix_2(32, 32, 4.0f);
+    Matrix matrix_3;
+    for(auto _ : state) {
+        matrix_3 = matrix_1 + matrix_2;
+
+        benchmark::DoNotOptimize(matrix_3);
+    }
+}
+
+BENCHMARK(BM_AddOperatorMatrix_4KiB)
+    ->Repetitions(10);
+
+static void BM_AddOperatorMatrix_8KiB(benchmark::State& state) {
+    Matrix matrix_1(64, 32, 2.0f);
+    Matrix matrix_2(64, 32, 4.0f);
+    Matrix matrix_3;
+    for(auto _ : state) {
+        matrix_3 = matrix_1 + matrix_2;
+
+        benchmark::DoNotOptimize(matrix_3);
+    }
+}
+
+BENCHMARK(BM_AddOperatorMatrix_8KiB)
+    ->Repetitions(10);
+
+static void BM_AddOperatorMatrix_16KiB(benchmark::State& state) {
+    Matrix matrix_1(64, 64, 2.0f);
+    Matrix matrix_2(64, 64, 4.0f);
+    Matrix matrix_3;
+    for(auto _ : state) {
+        matrix_3 = matrix_1 + matrix_2;
+
+        benchmark::DoNotOptimize(matrix_3);
+    }
+}
+
+BENCHMARK(BM_AddOperatorMatrix_16KiB)
     ->Repetitions(10);
 
 BENCHMARK_MAIN();
