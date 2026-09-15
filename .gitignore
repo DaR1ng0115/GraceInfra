@@ -8,3 +8,4 @@ perf_tensor.json
 launch_perf.bat
 compile_commands.json
 launch_perf.sh
+__pycache__
