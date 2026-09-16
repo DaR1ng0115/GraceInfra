@@ -20,7 +20,6 @@ option(ENABLE_PERF "配置perf程序" OFF)
 # 设置底层数据静态库
 set(DATA_SOURCES
     src/tensor.cpp
-    src/matrix.cpp
 )
 
 add_library(data STATIC ${DATA_SOURCES})
