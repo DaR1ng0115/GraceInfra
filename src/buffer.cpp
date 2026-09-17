@@ -29,7 +29,20 @@ Buffer::Buffer(size_t numel, float fill_data)
     }
 }
 
+Buffer::Buffer(const Buffer& other)
+:numel_(other.numel_) {
+    ref_count_ = 1;
+    data_ = static_cast<float*>(malloc(numel_*sizeof(float)));
+    if(data_ == nullptr) throw poerror::MemoryException("Memory allocation failed");
+    std::copy(other.data_, other.data_+other.numel_, data_);
+}
+
 Buffer::~Buffer() {
     free(data_);
     data_ = nullptr;
+}
+
+void Buffer::release() {
+    ref_count_--;
+    if(ref_count_ == 0) delete this;
 }
