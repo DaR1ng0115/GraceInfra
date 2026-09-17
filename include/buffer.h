@@ -3,6 +3,7 @@
 // GraceInfra
 // 
 // created by DaR1ng on 26-9-16
+#pragma once
 
 #include "tensor.h"
 #include <cstddef>

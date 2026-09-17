@@ -8,9 +8,11 @@
 #include "exceptions.h"
 #include <limits>
 #include <cstddef>
+#include <cstdlib>
 
 Buffer::Buffer(size_t numel)
 :numel_(numel) {
+    if(numel == 0) return;
     if(numel > std::numeric_limits<size_t>::max()/sizeof(float)) throw poerror::OverflowException("Numeric overflow");
     data_ = static_cast<float*>(malloc(numel_*sizeof(float)));
     if(data_ == nullptr) throw poerror::MemoryException("Memory allocation failed");
@@ -18,6 +20,7 @@ Buffer::Buffer(size_t numel)
 
 Buffer::Buffer(size_t numel, float fill_data)
 :numel_(numel) {
+    if(numel == 0) return;
     if(numel > std::numeric_limits<size_t>::max()/sizeof(float)) throw poerror::OverflowException("Numeric overflow");
     data_ = static_cast<float*>(malloc(numel_*sizeof(float)));
     if(data_ == nullptr) throw poerror::MemoryException("Memory allocation failed");

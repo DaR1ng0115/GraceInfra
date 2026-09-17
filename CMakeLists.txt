@@ -20,6 +20,7 @@ option(ENABLE_PERF "配置perf程序" OFF)
 # 设置底层数据静态库
 set(DATA_SOURCES
     src/tensor.cpp
+    src/buffer.cpp
 )
 
 add_library(data STATIC ${DATA_SOURCES})
@@ -106,7 +107,7 @@ if(ENABLE_PERF)
     FetchContent_Declare(
         googlebenchmark
         GIT_REPOSITORY https://github.com/google/benchmark.git
-        GIT_TAG        1.9.5
+        GIT_TAG        v1.9.5
     )
 
     set(BENCHMARK_ENABLE_TESTING off CACHE BOOL "" FORCE)
