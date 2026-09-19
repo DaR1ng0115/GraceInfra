@@ -27,4 +27,5 @@ private:
     ~Buffer();        
     
     void release();
+    void retain();
 };

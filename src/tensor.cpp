@@ -56,6 +56,12 @@ Tensor::Tensor(const Tensor& other)
     }
 }
 
+Tensor::Tensor(const Tensor& other, AliasTag) 
+:shape_(other.shape()), strides_(other.strides()), offset_(other.offset()) {
+    buffer_ = other.buffer_;
+    buffer_ -> retain();
+}
+
 Tensor::Tensor(Tensor&& other) noexcept
 :shape_(std::move(other.shape_)), strides_(std::move(other.strides_)), buffer_(other.buffer_), offset_(other.offset()) {
     other.strides_.clear();
@@ -65,8 +71,10 @@ Tensor::Tensor(Tensor&& other) noexcept
 }
 
 Tensor::~Tensor() {
-    buffer_ -> release();
-    buffer_ = nullptr;
+    if(buffer_ != nullptr) {
+        buffer_ -> release();
+        buffer_ = nullptr;
+    }
 }
 
 int64_t Tensor::shape(int64_t dim) const {
@@ -113,7 +121,7 @@ Tensor Tensor::operator+(const Tensor& other) const {
     Tensor res(shape_);
     int64_t numel = this->numel();
     for(int64_t i=0; i<numel; ++i) {
-        res.buffer_->data_[i] = buffer_->data_[i] + other.buffer_->data_[i];
+        res.buffer_->data_[i] = buffer_->data_[i+offset_] + other.buffer_->data_[i+other.offset_];
     }
     return res;
 }
@@ -143,6 +151,8 @@ Tensor& Tensor::operator=(Tensor&& other) noexcept {
     other.buffer_ = nullptr;
     shape_ = std::move(other.shape_);
     strides_ = std::move(other.strides_);
+    offset_ = other.offset();
+    other.offset_ = 0;
     other.shape_.clear();
     other.strides_.clear();
     return *this;

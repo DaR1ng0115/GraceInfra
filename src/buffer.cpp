@@ -9,6 +9,7 @@
 #include <limits>
 #include <cstddef>
 #include <cstdlib>
+#include <algorithm>
 
 Buffer::Buffer(size_t numel)
 :numel_(numel) {
@@ -45,4 +46,8 @@ Buffer::~Buffer() {
 void Buffer::release() {
     ref_count_--;
     if(ref_count_ == 0) delete this;
+}
+
+void Buffer::retain() {
+    ref_count_++;
 }
