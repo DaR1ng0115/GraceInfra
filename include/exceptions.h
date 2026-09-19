@@ -28,4 +28,14 @@ namespace poerror {
     public:
         using GraceException::GraceException;
     };
+
+    class StepException : public GraceException {
+    public:
+        using GraceException::GraceException;
+    };
+
+    class ArgsException : public GraceException {
+    public:
+     using GraceException::GraceException;
+    };
 }

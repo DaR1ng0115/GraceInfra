@@ -32,7 +32,7 @@ private:
     static bool safe_multiply(int64_t a, int64_t b, int64_t& result);
     
 public:
-    Tensor();
+    Tensor() = default;
     explicit Tensor(const std::vector<int64_t> &shape);
     Tensor(const std::vector<int64_t> &shape, float fill_data);
     Tensor(const Tensor& other);
@@ -107,8 +107,13 @@ public:
 // 比如我们会使用arg.start，当然我们知道这里的arg其实是Slice类型的对象，但由于没有使用constexpr，编译器并不知道这是什么类型
 // 实例化就会出现问题，当使用constexpr时，如果编译时判断到这个arg时Slice对象，那么其他的分支就根本不会被编译
             if constexpr (std::is_integral_v<argType>) {
+                if(arg >= shape_[dim] || arg < 0) throw poerror::DimensionException("Illegal dimensions");
                 sliceTensor.offset_ += arg * strides_[dim];
             } else if constexpr (std::is_same_v<argType, Slice>) {
+                if(arg.start_ < 0 || arg.end_ < 0 ||arg.end_ > shape_[dim] ||
+                   arg.start_ > arg.end_) throw poerror::DimensionException("Illegal dimensions");
+// 暂时不支持负步长
+                if(arg.step_ <= 0) throw poerror::StepException("Step must be a positive number");
 // 这里需要考虑有step的情况，比如对于(1, 2, 3, 4, 5)，如果我令step=2，那么得到的则是(1, 3, 5)；如果是(1, 2, 3, 4)，令step=2，得到(1, 3)
 // 显然在step为2的情况下，元素数量为奇数时需要加1再除以2，元素数量为偶数时直接除以2
 // 那step为任意的情况下呢？对于一个元素数量为n的数列，如果step=t，从a0开始，中间间隔t-1个元素，然后就是at，a2t, a3t...akt，其中kt<=n-1
@@ -121,6 +126,8 @@ public:
             } else if constexpr (std::is_same_v<argType, All>) {
                 newShape.push_back(shape_[dim]);
                 newStrides.push_back(strides_[dim]);
+            } else {
+                throw poerror::ArgsException("Illegal arguments");
             }
             ++dim;
         };

@@ -13,10 +13,6 @@
 #include "tensor.h"
 #include "exceptions.h"
 
-Tensor::Tensor() {
-    buffer_ = new Buffer(0);
-}
-
 Tensor::Tensor(const std::vector<int64_t> &shape) 
 :shape_(shape), strides_(shape.size(), 1) {
     for(auto dim : shape) {
@@ -27,7 +23,6 @@ Tensor::Tensor(const std::vector<int64_t> &shape)
         if(!issafe) throw poerror::OverflowException("Numeric overflow");
     }
     int64_t numel = this->numel();
-    if(numel == 0) buffer_ = new Buffer(0);
     if(numel > 0)  buffer_ = new Buffer(numel);
 }
 
@@ -41,7 +36,6 @@ Tensor::Tensor(const std::vector<int64_t> &shape, float fill_data)
         if(!issafe) throw poerror::OverflowException("Numeric overflow");
     }
     int64_t numel = this->numel();
-    if(numel == 0) buffer_ = new Buffer(0);
     if(numel > 0)  buffer_ = new Buffer(numel, fill_data);
 }
 
@@ -52,14 +46,16 @@ Tensor::Tensor(const Tensor& other)
         buffer_ = new Buffer(*other.buffer_);
     }
     if(other.numel() == 0) {
-        buffer_ = new Buffer(0);
+        offset_ = 0;
     }
 }
 
 Tensor::Tensor(const Tensor& other, AliasTag) 
 :shape_(other.shape()), strides_(other.strides()), offset_(other.offset()) {
-    buffer_ = other.buffer_;
-    buffer_ -> retain();
+    if(other.buffer_ != nullptr) {
+        buffer_ = other.buffer_;
+        buffer_ -> retain();
+    }
 }
 
 Tensor::Tensor(Tensor&& other) noexcept
@@ -128,17 +124,13 @@ Tensor Tensor::operator+(const Tensor& other) const {
 
 Tensor& Tensor::operator=(const Tensor& other) {
     if(this == &other) return *this;
-    int64_t numel = this->numel();
-    if(shape_ == other.shape() && offset_ == other.offset() && numel != 0 && other.numel() != 0) {
-        std::copy(other.buffer_->data_, other.buffer_->data_+other.numel(), buffer_->data_);
-    }
-    else {
-        Tensor temp(other);
-        std::swap(shape_, temp.shape_);
-        std::swap(strides_, temp.strides_);
-        std::swap(buffer_, temp.buffer_);
-        std::swap(offset_, temp.offset_);
-    }
+// 暂时删除拷贝赋值的快速路径，因offset和step逻辑暂时未稳定
+    int64_t numel = this->numel();   
+    Tensor temp(other);
+    std::swap(shape_, temp.shape_);
+    std::swap(strides_, temp.strides_);
+    std::swap(buffer_, temp.buffer_);
+    std::swap(offset_, temp.offset_);
     return *this;
 }
 
