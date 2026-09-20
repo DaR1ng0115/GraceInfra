@@ -112,12 +112,72 @@ bool Tensor::safe_multiply(int64_t a, int64_t b, int64_t& result) {
     return true;
 }
 
+// 在实现了切片之后，每个tensor的索引不一定是实际在buffer中的索引，我们改变的是tensor所携带的信息，但当我们需要直接
+// 读取或修改buffer的数据的时候，比如在加法的运算符重载中，直接写buffer_[i+offset_]是不对的，因为在此处我们并没有考
+// 虑到shape和step。
+// 因此需要将逻辑索引先转化为坐标的形式，然后通过strides计算在buffer上的实际一维索引
+
+int64_t Tensor::logical2phy(int64_t logical_idx) const {
+    if(logical_idx < 0 || logical_idx >= numel()) throw poerror::DimensionException("Idx out of range");
+    int64_t coordinate = 0;
+    int64_t physical_idx = offset_;
+    for(int i=static_cast<int64_t>(shape_.size())-1; i>=0; --i) {
+        coordinate = logical_idx % shape_[i];
+        logical_idx = logical_idx / shape_[i];
+        physical_idx += coordinate * strides_[i];
+    }
+
+    return physical_idx;
+// 不知道读者看到这里的时候，会不会想到:如果在加法运算符重载的循环中，每次都调用这个函数计算物理索引，可能会显著减慢运行速度
+// 但我们暂且不谈这个算法本身是否可以优化到更好，我们可以思考一下，哪些情况下实际上不需要转化
+// 最先能想到的大概是完整的tensor，内部没有经过任何切片；其次被切片了，但内部有大块的连续索引，尤其是无step的，这实际上也能避免一些转换
+// 我们现在先只对整块完全连续的tensor进行优化，简单来说，就是用一个条件判断来判断其是否拥有一个完整的连续数据块
+// 比如对一个5x5的矩阵，经过切片之后，变成了3x5的矩阵，offset变为10，形状变为(3, 5)，但是你可以发现，(5, 5)和(3, 5)计算出来的
+// strides是完全一样的，因此我们可以借助这个性质，通过计算expect_strides是否符合预期
+}
+
+bool Tensor::is_contiguous() const {
+    int64_t expect_strides = 1;
+    int64_t expect_strides_next = 0;
+    if(shape_.back() > 1 && strides_.back() != 1) return false;
+    for(int64_t i=static_cast<int64_t>(shape_.size())-1; i>0; --i) {
+        if(shape_[i-1] > 1) {
+            expect_strides_next = expect_strides * shape_[i];
+            if(expect_strides_next == strides_[i-1]) expect_strides = expect_strides_next;
+            else return false;
+        } else {
+            expect_strides *= shape_[i];
+        }
+    }
+    return true;
+}
+
 Tensor Tensor::operator+(const Tensor& other) const {
     if(shape_ != other.shape()) throw poerror::DimensionException("Dimensions mismatch");
     Tensor res(shape_);
     int64_t numel = this->numel();
-    for(int64_t i=0; i<numel; ++i) {
-        res.buffer_->data_[i] = buffer_->data_[i+offset_] + other.buffer_->data_[i+other.offset_];
+    bool rhs_is_contiguous = this->is_contiguous();
+    bool lhs_is_contiguous = other.is_contiguous();
+    if(rhs_is_contiguous && lhs_is_contiguous) {
+        for(int64_t i=0; i<numel; ++i) {
+            res.buffer_->data_[i] = buffer_->data_[i+offset_] + other.buffer_->data_[i+other.offset_];
+        }
+    } else if(lhs_is_contiguous) {
+        for(int64_t i=0; i<numel; ++i) {
+            int64_t lhs_phy_idx = this->logical2phy(i);
+            res.buffer_->data_[i] = buffer_->data_[lhs_phy_idx] + other.buffer_->data_[i+other.offset_];
+        }
+    } else if(rhs_is_contiguous) {
+        for(int64_t i=0; i<numel; ++i) {
+            int64_t rhs_phy_idx = other.logical2phy(i);
+            res.buffer_->data_[i] = buffer_->data_[i+offset_] + other.buffer_->data_[rhs_phy_idx];
+        }
+    } else {
+        for(int64_t i=0; i<numel; ++i) {
+            int64_t lhs_phy_idx = this->logical2phy(i);
+            int64_t rhs_phy_idx = other.logical2phy(i);
+            res.buffer_->data_[i] = buffer_->data_[lhs_phy_idx] + other.buffer_->data_[rhs_phy_idx];
+        }
     }
     return res;
 }

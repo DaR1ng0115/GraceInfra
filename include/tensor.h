@@ -30,6 +30,8 @@ private:
     Buffer* buffer_ = nullptr;
     size_t offset_ = 0;
     static bool safe_multiply(int64_t a, int64_t b, int64_t& result);
+    int64_t logical2phy(int64_t logical_idx) const;
+    bool is_contiguous() const;
     
 public:
     Tensor() = default;
