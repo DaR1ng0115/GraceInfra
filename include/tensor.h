@@ -12,7 +12,6 @@
 #include <vector>
 #include <cstdint>
 #include <cstdlib>
-#include <type_traits>
 #include "buffer.h"
 #include "exceptions.h"
 #include "slice.h"
@@ -112,7 +111,7 @@ public:
                 if(arg >= shape_[dim] || arg < 0) throw poerror::DimensionException("Illegal dimensions");
                 sliceTensor.offset_ += arg * strides_[dim];
             } else if constexpr (std::is_same_v<argType, Slice>) {
-                if(arg.start_ < 0 || arg.end_ < 0 ||arg.end_ > shape_[dim] ||
+                if(arg.start_ < 0 || arg.end_ < 0 || arg.end_ > shape_[dim] ||
                    arg.start_ > arg.end_) throw poerror::DimensionException("Illegal dimensions");
 // 暂时不支持负步长
                 if(arg.step_ <= 0) throw poerror::StepException("Step must be a positive number");

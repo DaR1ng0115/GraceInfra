@@ -152,12 +152,32 @@ bool Tensor::is_contiguous() const {
     return true;
 }
 
+// 这一章中，我们需要实现张量加法的广播机制，此处不再解释广播的概念，从哪些情况可以广播开始
+// 1.如(4, 5),(1, 5); 2.如(4, 5),(5,) 但注意，因为对齐顺序是从右往左对齐，所以(4, 5),(4,)不符合广播，原因后续会解释
+// 3.如(4, 1),(1, 5); 4.如(4, 5),2（标量）
+
+// 为什么对齐顺序是从右往左？
+// 首先我们需要找到源头，在张量的维度中，外层维度（即左边的维度）的语义是容器，内层维度是内容。
+// 举个例子:一个(2, 3)的矩阵
+// [
+//  [1, 2, 3]
+//  [4, 5, 6]
+// ]
+// 在我们使用习惯中，[1, 2, 3],[4, 5, 6]是两个同类型的向量数据，而'2'则是描述有多少个这样的向量
+// 那么如果有一个形状为(3,)的向量，比如[1, 3, 5]，我们是不是可以理解为：将这一个向量“复制”两份，加到原来的矩阵中
+// 因此，这个从右往左对齐的逻辑是由人为约定的容器和内容的定义所决定的
+
+// 现在，我们可以梳理一下，在进行广播的时候，应该有哪些步骤
+// 首先是整个流程需要由一个循环决定，即遍历进行加法的张量的shape
+// 在该循环中，应进行两种操作:1.右对齐，检查对应的维度是否相等，如果不相等，其中一个维度是否是1。
+// 2.当均存在的维度遍历完成后且符合广播时，
 Tensor Tensor::operator+(const Tensor& other) const {
-    if(shape_ != other.shape()) throw poerror::DimensionException("Dimensions mismatch");
+    
+    if(shape_.empty()) return Tensor{};
     Tensor res(shape_);
     int64_t numel = this->numel();
-    bool rhs_is_contiguous = this->is_contiguous();
-    bool lhs_is_contiguous = other.is_contiguous();
+    bool lhs_is_contiguous = this->is_contiguous();
+    bool rhs_is_contiguous = other.is_contiguous();
     if(rhs_is_contiguous && lhs_is_contiguous) {
         for(int64_t i=0; i<numel; ++i) {
             res.buffer_->data_[i] = buffer_->data_[i+offset_] + other.buffer_->data_[i+other.offset_];
@@ -185,7 +205,6 @@ Tensor Tensor::operator+(const Tensor& other) const {
 Tensor& Tensor::operator=(const Tensor& other) {
     if(this == &other) return *this;
 // 暂时删除拷贝赋值的快速路径，因offset和step逻辑暂时未稳定
-    int64_t numel = this->numel();   
     Tensor temp(other);
     std::swap(shape_, temp.shape_);
     std::swap(strides_, temp.strides_);
@@ -198,7 +217,8 @@ Tensor& Tensor::operator=(Tensor&& other) noexcept {
     if(this == &other) return *this;
     Buffer* old_buffer = buffer_;
     buffer_ = nullptr;
-    old_buffer -> release();
+    if(old_buffer != nullptr) old_buffer -> release();
+
     buffer_ = other.buffer_;
     other.buffer_ = nullptr;
     shape_ = std::move(other.shape_);
