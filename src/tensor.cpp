@@ -136,6 +136,14 @@ int64_t Tensor::logical2phy(int64_t logical_idx) const {
 // strides是完全一样的，因此我们可以借助这个性质，通过计算expect_strides是否符合预期
 }
 
+int64_t Tensor::logical2phy(int64_t logical_idx, std::vector<int64_t> &shape) const {
+    int64_t numel = 1;
+    for(auto dim : shape) {
+        numel *= dim;
+    }
+    if(logical_idx < 0 || logical_idx >= numel) throw poerror::DimensionException("Idx out of range");
+}
+
 bool Tensor::is_contiguous() const {
     int64_t expect_strides = 1;
     int64_t expect_strides_next = 0;
@@ -168,26 +176,36 @@ bool Tensor::is_contiguous() const {
 // 因此，这个从右往左对齐的逻辑是由人为约定的容器和内容的定义所决定的
 
 // 现在，我们可以梳理一下，在进行广播的时候，应该有哪些步骤
-// 首先是整个流程需要由一个循环决定，即遍历进行加法的张量的shape
+// 首先是整个流程需要由遍历循环决定，即遍历进行加法的张量的shape
 // 在该循环中，应进行两种操作:1.右对齐，检查对应的维度是否相等，如果不相等，其中一个维度是否是1。
-// 2.当均存在的维度遍历完成后且符合广播时，
+// 2.当均存在的维度遍历完成后且符合广播时，按照广播规则进行广播。
 Tensor Tensor::operator+(const Tensor& other) const {
-    
-    if(shape_.empty()) return Tensor{};
-    Tensor res(shape_);
-    int64_t numel = this->numel();
+    const auto& lhs_tensor = *this;
+    const auto& rhs_tensor = other;
+    size_t max = std::max(lhs_tensor.shape_.size(), rhs_tensor.shape_.size());
+    size_t lhs_size = lhs_tensor.shape_.size();
+    size_t rhs_size = rhs_tensor.shape_.size();
+    std::vector<int64_t> shape(max, 1);
+    for(int64_t k=0; k<max; ++k) {
+        int64_t lhs_dim = k<lhs_size ? lhs_tensor.shape_[lhs_size-1-k] : 1;
+        int64_t rhs_dim = k<rhs_size ? rhs_tensor.shape_[rhs_size-1-k] : 1;
+        if(lhs_dim != rhs_dim && lhs_dim != 1 && rhs_dim != 1) throw poerror::DimensionException("Dimensions can not be broadcast");
+        shape[max-1-k] = lhs_dim == 1 ? rhs_dim : lhs_dim;
+    }
+    Tensor res(shape);
+    int64_t numel = res.numel();
     bool lhs_is_contiguous = this->is_contiguous();
     bool rhs_is_contiguous = other.is_contiguous();
     if(rhs_is_contiguous && lhs_is_contiguous) {
         for(int64_t i=0; i<numel; ++i) {
             res.buffer_->data_[i] = buffer_->data_[i+offset_] + other.buffer_->data_[i+other.offset_];
         }
-    } else if(lhs_is_contiguous) {
+    } else if(rhs_is_contiguous) {
         for(int64_t i=0; i<numel; ++i) {
             int64_t lhs_phy_idx = this->logical2phy(i);
             res.buffer_->data_[i] = buffer_->data_[lhs_phy_idx] + other.buffer_->data_[i+other.offset_];
         }
-    } else if(rhs_is_contiguous) {
+    } else if(lhs_is_contiguous) {
         for(int64_t i=0; i<numel; ++i) {
             int64_t rhs_phy_idx = other.logical2phy(i);
             res.buffer_->data_[i] = buffer_->data_[i+offset_] + other.buffer_->data_[rhs_phy_idx];
