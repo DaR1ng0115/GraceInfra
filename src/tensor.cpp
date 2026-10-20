@@ -136,17 +136,25 @@ int64_t Tensor::logical2phy(int64_t logical_idx) const {
 // strides是完全一样的，因此我们可以借助这个性质，通过计算expect_strides是否符合预期
 }
 
-int64_t Tensor::logical2phy(int64_t logical_idx, std::vector<int64_t> &shape) const {
-    int64_t numel = 1;
-    for(auto dim : shape) {
-        numel *= dim;
+int64_t Tensor::logical2phy(int64_t logical_idx, const Tensor& other) const {
+    if(logical_idx < 0 || logical_idx >= numel()) throw poerror::DimensionException("Idx out of range");
+    int64_t res_ndim     = static_cast<int64_t>(shape_.size());
+    int64_t other_ndim   = static_cast<int64_t>(other.shape().size());
+    int64_t physical_idx = other.offset();
+    for(int64_t i=res_ndim-1, j=other_ndim-1; i>=0; --i,--j) {
+        int64_t coordinate = logical_idx % shape_[i];
+        logical_idx = logical_idx / shape_[i];
+        if(j>=0 && other.shape_[j] != 1) {
+            physical_idx += coordinate * other.strides_[j];
+        }
     }
-    if(logical_idx < 0 || logical_idx >= numel) throw poerror::DimensionException("Idx out of range");
+    return physical_idx;
 }
 
 bool Tensor::is_contiguous() const {
     int64_t expect_strides = 1;
     int64_t expect_strides_next = 0;
+    if(shape_.size() == 0) return true;
     if(shape_.back() > 1 && strides_.back() != 1) return false;
     for(int64_t i=static_cast<int64_t>(shape_.size())-1; i>0; --i) {
         if(shape_[i-1] > 1) {
@@ -162,7 +170,7 @@ bool Tensor::is_contiguous() const {
 
 // 这一章中，我们需要实现张量加法的广播机制，此处不再解释广播的概念，从哪些情况可以广播开始
 // 1.如(4, 5),(1, 5); 2.如(4, 5),(5,) 但注意，因为对齐顺序是从右往左对齐，所以(4, 5),(4,)不符合广播，原因后续会解释
-// 3.如(4, 1),(1, 5); 4.如(4, 5),2（标量）
+// 3.如(4, 1),(1, 5); 4.如(4, 5),2（标量）(注: 本框架中空shape不是标量, 和numpy不同)
 
 // 为什么对齐顺序是从右往左？
 // 首先我们需要找到源头，在张量的维度中，外层维度（即左边的维度）的语义是容器，内层维度是内容。
@@ -182,6 +190,7 @@ bool Tensor::is_contiguous() const {
 Tensor Tensor::operator+(const Tensor& other) const {
     const auto& lhs_tensor = *this;
     const auto& rhs_tensor = other;
+    if(lhs_tensor.shape_.empty() || rhs_tensor.shape_.empty()) throw poerror::DimensionException("Empty tensor can not be added");
     size_t max = std::max(lhs_tensor.shape_.size(), rhs_tensor.shape_.size());
     size_t lhs_size = lhs_tensor.shape_.size();
     size_t rhs_size = rhs_tensor.shape_.size();
@@ -194,28 +203,13 @@ Tensor Tensor::operator+(const Tensor& other) const {
     }
     Tensor res(shape);
     int64_t numel = res.numel();
-    bool lhs_is_contiguous = this->is_contiguous();
-    bool rhs_is_contiguous = other.is_contiguous();
-    if(rhs_is_contiguous && lhs_is_contiguous) {
-        for(int64_t i=0; i<numel; ++i) {
-            res.buffer_->data_[i] = buffer_->data_[i+offset_] + other.buffer_->data_[i+other.offset_];
-        }
-    } else if(rhs_is_contiguous) {
-        for(int64_t i=0; i<numel; ++i) {
-            int64_t lhs_phy_idx = this->logical2phy(i);
-            res.buffer_->data_[i] = buffer_->data_[lhs_phy_idx] + other.buffer_->data_[i+other.offset_];
-        }
-    } else if(lhs_is_contiguous) {
-        for(int64_t i=0; i<numel; ++i) {
-            int64_t rhs_phy_idx = other.logical2phy(i);
-            res.buffer_->data_[i] = buffer_->data_[i+offset_] + other.buffer_->data_[rhs_phy_idx];
-        }
-    } else {
-        for(int64_t i=0; i<numel; ++i) {
-            int64_t lhs_phy_idx = this->logical2phy(i);
-            int64_t rhs_phy_idx = other.logical2phy(i);
-            res.buffer_->data_[i] = buffer_->data_[lhs_phy_idx] + other.buffer_->data_[rhs_phy_idx];
-        }
+    bool lhs_fast = this->is_contiguous() && lhs_tensor.shape_ == res.shape_;
+    bool rhs_fast = other.is_contiguous() && rhs_tensor.shape_ == res.shape_;
+    for(int64_t i=0; i<numel; ++i) {
+        int64_t lhs_phy_idx = lhs_fast ? i+lhs_tensor.offset_ : res.logical2phy(i, lhs_tensor);
+        int64_t rhs_phy_idx = rhs_fast ? i+rhs_tensor.offset_ : res.logical2phy(i, rhs_tensor);
+
+        res.buffer_->data_[i] = buffer_->data_[lhs_phy_idx] + other.buffer_->data_[rhs_phy_idx];
     }
     return res;
 }

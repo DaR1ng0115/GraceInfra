@@ -46,7 +46,7 @@
             "generator": "Ninja",
             "cacheVariables": {
                 "ENABLE_MAIN": "ON",
-                "ENABLE_TEST": "OFF",
+                "ENABLE_TEST": "ON",
                 "ENABLE_ASAN": "OFF",
                 "ENABLE_PERF": "OFF"
             }

@@ -52,7 +52,7 @@ if(ENABLE_TEST)
     )
     FetchContent_MakeAvailable(googletest)
 
-    add_executable(test src/test/unit/ch01_test_tensor.cpp)
+    add_executable(test src/test/unit/ch02_test_tensor.cpp)
 
 # 测试代码的头文件路径
     target_include_directories(test PRIVATE
