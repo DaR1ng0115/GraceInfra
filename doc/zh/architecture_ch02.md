@@ -13,7 +13,11 @@ Tensor - shape, strides, offset -> 无填充构造，有填充构造，拷贝构
 Buffer - ref_count, numel, data -> 无填充构造，有填充构造，拷贝构造，retain增加引用计数，release减少引用计数
 
 ## 约定
-1. Tensor状态约定，第一种正常构造，shape，strides，offset均正常，buffer指针指向一个buffer对象；第二种为构造空对象，shape，strides均为空，offset为0，buffer指针为nullptr；第三种为构造包含0维度的对象，shape中包含0维度，strides由shape正常根据公式计算得出，offset为0，buffer指针为nullptr。此外，需要注意的是，如果对一个非空Tensor对象使用例如tensor(Slice{1, 1})，返回的对象状态为shape中包含0维度，strides根据公式计算所得，offset为0，buffer指针指向原先Tensor对象的buffer对象，因此上述状态约定仅为构造状态，不一定为最终状态。
+1. Tensor状态约定:
+- 正常构造，shape，strides，offset均正常，buffer指针指向一个buffer对象；
+- 构造空对象，shape，strides均为空，offset为0，buffer指针为nullptr；
+- 构造包含0维度的对象，shape中包含0维度，strides由shape正常根据公式计算得出，offset为0，buffer指针为nullptr.
+此外，需要注意的是，如果对一个非空Tensor对象使用例如tensor(Slice{1, 1})，返回的对象状态为shape中包含0维度，strides根据公式计算所得，offset为0，buffer指针指向原先Tensor对象的buffer对象，因此上述状态约定仅为构造状态，不一定为最终状态。
 
    
 ## 实现详解
@@ -42,7 +46,7 @@ private:
 
 public:
   T multiply(const Matrix& matrix) {
-    return matrix.a * matrix.b;
+    return a * b;
   }
 };
 ```
@@ -65,9 +69,17 @@ T add(T a, T b);
 ```
 ```cpp
 // add.cpp
+#include "add.h"
+
+template<typename T>
+T add(T a, T b) {
+  return a + b;
+}
+
 template float add<float>(float, float);
 template double add<double>(double, double);
 ```
+
 可变参数模版则是模版语法的延伸，其解决了我们在上一章中遇到的困境: 参数数量不固定，参数类型不固定。可变参数模版的基础语法如下:
 ```cpp
 template <typename... Args>
@@ -97,4 +109,25 @@ void print_all(T first, Rest... rest) {
 }
 ```
 
+2. enable_if_v详解
+先从enabel_if开始, 其简易版本如下:
+```cpp
+// 条件为false时, 不提供type
+template<bool B, typename T = void>
+struct enabel_if {};
+
+// 条件为true时, 提供type
+template<typename T>
+struct enable_if<true, T> {
+  using type = T;
+};
+
+// 简写: 直接取出enable_if中的type
+template<bool B, typename T = void>
+using enable_if_t = typename enable_if<B, T>::type;
+```
+所以, `typename std::enable_if<条件, int>::type`和`std::enable_if_v<条件, int>`是等价的.  
+在此处, `typename`用于声明type是类型. 
+于是, 在`template<typename... Args, std::enable_if_v<(std::is_integarl_v<Args> && ...), int> = 0>`中, 当条件成立时, 模版就会被替换为`template<typename... Args, int = 0>`, `int = 0`可看作占位符. 而如果没有指定类型, `std::enable_if_v`在条件成立时则会转化为void类型, 而`void = 0`是错误的, 如果不填=0, 这个未命名参数就没有默认值了, 普通调用无法使用这个重载, 也就是说, 你需要在调用时显式指定该未命名参数的值, 这是不必要的. 
+反之, 如果条件不成立, 就会触发SFINAE, 全称是'Substitution Failure Is Not An Error', 意思是*替换失败不是错误*, 这个模版规则即为在特定位置替换模版失败时, 排除这个模版, 寻找其他重载. 
 
