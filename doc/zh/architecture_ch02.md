@@ -30,7 +30,7 @@ view机制是相当重要的一个概念，简单来说，view就是数据不变
 
 ## 语法详解
 本章中使用了相当多的C++的新特性，在注释中进行了大概的解释，在此处则进行更深入的理解
-1. 模版
+### 模版
 template \<typename T>是模版的基础语法，这个结构可以放在函数和类前，比如:
 ```cpp
 template <typename T>
@@ -45,7 +45,7 @@ private:
   T b;
 
 public:
-  T multiply(const Matrix& matrix) {
+  T multiply() {
     return a * b;
   }
 };
@@ -109,7 +109,7 @@ void print_all(T first, Rest... rest) {
 }
 ```
 
-2. enable_if_v详解
+### enable_if_v
 先从enabel_if开始, 其简易版本如下:
 ```cpp
 // 条件为false时, 不提供type
@@ -130,4 +130,55 @@ using enable_if_t = typename enable_if<B, T>::type;
 在此处, `typename`用于声明type是类型. 
 于是, 在`template<typename... Args, std::enable_if_v<(std::is_integarl_v<Args> && ...), int> = 0>`中, 当条件成立时, 模版就会被替换为`template<typename... Args, int = 0>`, `int = 0`可看作占位符. 而如果没有指定类型, `std::enable_if_v`在条件成立时则会转化为void类型, 而`void = 0`是错误的, 如果不填=0, 这个未命名参数就没有默认值了, 普通调用无法使用这个重载, 也就是说, 你需要在调用时显式指定该未命名参数的值, 这是不必要的. 
 反之, 如果条件不成立, 就会触发SFINAE, 全称是'Substitution Failure Is Not An Error', 意思是*替换失败不是错误*, 这个模版规则即为在特定位置替换模版失败时, 排除这个模版, 寻找其他重载. 
+
+### lambda
+先了解什么是函数对象(function object): 可以像函数一样用`()`调用的对象叫函数对象. 比如
+```cpp
+struct Add {
+  int operator()(int a, int b) const { return a + b; }
+};
+
+Add add;
+int res = add(1, 2);
+```
+函数对象有两个很重要的特性, 第一个是其可以携带状态, 也就是成员变量, 第二个则是性能更好, 它可以被编译器内联.
+```cpp
+struct Counter {
+  int count = 0;
+  int operator() () { count++; }
+};
+
+Counter c1, c2;
+c1(); c1(); // c1.count == 2
+c2(); // c2.count == 1
+```
+
+而lambda就是编译器根据表达式自动生成函数对象.
+比如下面的这个lambda表达式
+```cpp
+auto f = [](int a, int b) { return a + b; };
+```
+lambda的语法分为四个部分: [捕获列表]\(参数列表) -> 返回类型 { 函数体 }. 其中返回类型可以省略.  
+编译器在遇到lambda的时候, 就会生成一个匿名结构体, 比如对于上面的lambda:
+```cpp
+struct __lambda_1 {
+  int operator()(int a, int b) const { return a + b; } // 生成的函数方法默认是const的
+};
+__lambda_1{}
+```
+如果想要把外部变量捕获到函数体中使用, 则需要使用捕获列表.
+```cpp
+int temp = 10;
+auto is_bigger = [temp](int x) { return x > temp; };
+```
+捕获的方式有四种:
+1. [x] 按值捕获x
+2. [&x] 按引用捕获x
+3. [=] 用到的变量均使用按值捕获
+4. [&] 用的变量均使用按引用捕获
+
+有两个需要注意的地方
+- 按值捕获的变量无法修改, 因为函数方法默认是const, 如果想修改, 需要写`mutable: [x]`, 这样就可以修改了, 但改的仍然是lambda内部的拷贝
+- 按引用捕获需要注意悬空引用, 假如捕获的变量提前释放了, 那引用的就会是一个悬空的.
+
 

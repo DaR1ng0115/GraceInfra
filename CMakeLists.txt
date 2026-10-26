@@ -114,7 +114,7 @@ if(ENABLE_PERF)
 
     FetchContent_MakeAvailable(googlebenchmark)
 
-    add_executable(perf src/test/perf/ch01_perf_tensor.cpp)
+    add_executable(perf src/test/perf/ch02_perf_tensor.cpp)
 
     target_link_libraries(perf PRIVATE benchmark::benchmark)
 

@@ -126,7 +126,7 @@ public:
             using argType = std::decay_t<decltype(arg)>;
 /*
 为什么使用constexpr?
-首先我们需要知道，constexpr关键字全称constant expression，意思是常量表达式。简单来说，使用constexpr声明的变量必须是编译期可
+首先需要知道，constexpr关键字全称constant expression，意思是常量表达式。简单来说，使用constexpr声明的变量必须是编译期可
 确定的，而此处的if constexpr意思则是编译期分支。
 由于我们需要处理三种参数类型，int，Slice，All。如果我们实现为运行期分支判断，那么在编译阶段就会有问题。
 比如我们会使用arg.start，当然我们知道这里的arg其实是Slice类型的对象，但由于没有使用constexpr，编译器并不知道这是什么类型
