@@ -15,7 +15,7 @@ endif()
 option(ENABLE_MAIN "配置main程序" OFF)
 option(ENABLE_TEST "配置test程序" OFF)
 option(ENABLE_ASAN "开启内存检测" OFF)
-option(ENABLE_PERF "配置perf程序" OFF)
+# option(ENABLE_PERF "配置perf程序" OFF)
 
 # 设置底层数据静态库
 set(DATA_SOURCES
@@ -99,31 +99,6 @@ if(ENABLE_TEST)
         )
 
     endif()
-endif()
-
-if(ENABLE_PERF)
-    include(FetchContent)
-
-    FetchContent_Declare(
-        googlebenchmark
-        GIT_REPOSITORY https://github.com/google/benchmark.git
-        GIT_TAG        v1.9.5
-    )
-
-    set(BENCHMARK_ENABLE_TESTING off CACHE BOOL "" FORCE)
-
-    FetchContent_MakeAvailable(googlebenchmark)
-
-    add_executable(perf src/test/perf/ch02_perf_tensor.cpp)
-
-    target_link_libraries(perf PRIVATE benchmark::benchmark)
-
-    target_include_directories(perf PRIVATE
-        ${CMAKE_SOURCE_DIR}/include
-    )   
-
-    target_link_libraries(perf PRIVATE data)
-
 endif()
 
 

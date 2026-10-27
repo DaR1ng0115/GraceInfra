@@ -30,16 +30,6 @@
                 "ENABLE_MAIN": "ON"
             }
         },
-
-        {
-            "name": "perf",
-            "binaryDir": "${sourceDir}/build/perf",
-            "generator": "Ninja",
-            "cacheVariables": {
-                "ENABLE_PERF": "ON",
-                "CMAKE_BUILD_TYPE": "Release"
-            }
-        },
         {
             "name": "clangd",
             "binaryDir": "${sourceDir}/build/clangd",

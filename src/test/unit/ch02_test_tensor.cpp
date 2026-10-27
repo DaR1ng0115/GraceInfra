@@ -181,7 +181,7 @@ TEST(CallOperator, ItemAccessOfNormal) {
 }
 
 TEST(CallOperator, ItemAccessOfSlice) {
-    Tensor t2 = Tensor({9, 5, 8})(Slice{3, 10}, 2, Slice{0, 9, 2}, 9.1);
+    Tensor t2 = Tensor({9, 5, 8}, 9.1)(Slice{3, 9}, 2, Slice{0, 8, 2});
     EXPECT_FLOAT_EQ(t2(3, 3), 9.1);
     EXPECT_THROW(t2(2, 3, 1), poerror::DimensionException);
     EXPECT_THROW(t2(-2, 2), poerror::DimensionException);
@@ -192,7 +192,7 @@ TEST(CallOperator, Silce) {
     Tensor rawTensor({16, 16, 32});
     EXPECT_THROW(rawTensor(Slice{0, 12}), poerror::DimensionException);
     EXPECT_THROW(rawTensor(Slice{0, 20}, all, all), poerror::DimensionException);
-    EXPECT_THROW(rawTensor(Slice{0, 12, -1}, all, all), poerror::DimensionException);
+    EXPECT_THROW(rawTensor(Slice{0, 12, -1}, all, all), poerror::StepException);
 }
 
 TEST(CopyFunc, Constructor) {
