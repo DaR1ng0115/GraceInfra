@@ -181,4 +181,21 @@ auto is_bigger = [temp](int x) { return x > temp; };
 - 按值捕获的变量无法修改, 因为函数方法默认是const, 如果想修改, 需要写`mutable: [x]`, 这样就可以修改了, 但改的仍然是lambda内部的拷贝
 - 按引用捕获需要注意悬空引用, 假如捕获的变量提前释放了, 那引用的就会是一个悬空的.
 
-
+但lambda的局限则在于参数类型不可变, 解决方法其实就是template, 但它的名字叫泛型lambda.
+```cpp
+auto f = [](auto a, auto b) { return a + b; };
+// 可以接受int, float, double等多种数据类型
+```
+本质上就是生成了一个成员函数的模版.
+```cpp
+struct __lambda_2 {
+  template<typename T1, typename T2>
+  auto operator()(T1 a, T2 b) { return a + b; }
+};
+```
+在C++20中, 还允许直接写出模版lambda.
+```cpp
+[]<typename T>(T a, T b) { return a + b; };
+// 强制要求a和b的类型一致
+```
+不过由于该项目使用的C++标准为C++17, 所以只能使用泛型lambda

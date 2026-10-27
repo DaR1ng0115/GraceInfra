@@ -168,3 +168,45 @@ TEST(TensorAddition, EdgeCases) {
         EXPECT_EQ(res.shape(), (std::vector<int64_t>{0, 3}));
     }
 }
+
+TEST(CallOperator, ItemAccessOfNormal) {
+    Tensor t1({3, 4, 2}, 1.5);
+    int i = 2;
+    long long j = 2;
+    int k = 1;
+    EXPECT_FLOAT_EQ(t1(i, j, k), 1.5);
+    EXPECT_THROW(t1(2, 1), poerror::DimensionException);
+    EXPECT_THROW(t1(-1, 1, 1), poerror::DimensionException);
+    EXPECT_THROW(t1(1, 5, 1), poerror::DimensionException);
+}
+
+TEST(CallOperator, ItemAccessOfSlice) {
+    Tensor t2 = Tensor({9, 5, 8})(Slice{3, 10}, 2, Slice{0, 9, 2}, 9.1);
+    EXPECT_FLOAT_EQ(t2(3, 3), 9.1);
+    EXPECT_THROW(t2(2, 3, 1), poerror::DimensionException);
+    EXPECT_THROW(t2(-2, 2), poerror::DimensionException);
+    EXPECT_THROW(t2(2, 9), poerror::DimensionException);
+}
+
+TEST(CallOperator, Silce) {
+    Tensor rawTensor({16, 16, 32});
+    EXPECT_THROW(rawTensor(Slice{0, 12}), poerror::DimensionException);
+    EXPECT_THROW(rawTensor(Slice{0, 20}, all, all), poerror::DimensionException);
+    EXPECT_THROW(rawTensor(Slice{0, 12, -1}, all, all), poerror::DimensionException);
+}
+
+TEST(CopyFunc, Constructor) {
+    Tensor empty{};
+    Tensor zeroShape({2, 0, 3});
+    Tensor t1(empty);
+    Tensor t2(zeroShape);
+    EXPECT_EQ(t1.offset(), 0);
+    EXPECT_EQ(t2.offset(), 0);
+}
+
+TEST(CopyFunc, Assignment) {
+    Tensor t1({2, 3}, 2.3);
+    EXPECT_NO_THROW(t1 = t1);
+}
+
+

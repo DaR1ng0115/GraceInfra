@@ -21,7 +21,7 @@
 - inline是内联关键字, 它有很多作用, 但在此处则用于避免重定义问题
 - constexper则是编译期求值, 由于模版生成需要在编译期执行, 因此这里的is_slice_v也需要在编译期求出
 - is_same_v是判断两个类型是否相同, 它是is_same<T, U>::value的简写形式
-- decay用于类型退化, 比如const int退化成int, Slice&退化为Slice
+- decay_t用于类型退化, 比如const int退化成int, Slice&退化为Slice
 
 因此, 整个逻辑组合起来的意思就是, 判断传入的模版参数T是否是Slice或者All类型, 只要是其中任意一个, 则is_slice_v为true, 否则为false
 */
@@ -83,12 +83,13 @@ public:
         for(size_t i=0; i<numOfArgs; ++i) {
             idx += arr[i] * strides_[i];
         }
+        // 实际上应为断言, 因为在目前的框架逻辑中, 不可能触发该异常.
         if(idx+offset_>=buffer_->numel_) throw poerror::DimensionException("Illegal dimensions");
         return buffer_->data_[offset_+idx];
     }
 
     // const重载版本
-    template<typename... Args, std::enable_if_t<!(is_slice_v<Args> || ...), int> = 0>
+    template<typename... Args, std::enable_if_t<(std::is_integral_v<Args> && ...), int> = 0>
     const float& operator()(Args... args) const {
         constexpr size_t numOfArgs = sizeof...(args);
         std::array<int64_t, numOfArgs> arr = {args...};
@@ -122,6 +123,8 @@ public:
         std::vector<int64_t> newShape{};
         std::vector<int64_t> newStrides{};
         size_t dim = 0;
+// 泛型lambda, 详见architecture文档.
+// decltype用于获取变量声明的类型, decay_t将获取到的类型退化, 以便于后续的条件判断.
         auto process = [&](const auto& arg) {
             using argType = std::decay_t<decltype(arg)>;
 /*
@@ -147,6 +150,7 @@ public:
 那step为任意的情况下呢？对于一个元素数量为n的数列，如果step=t，从a0开始，中间间隔t-1个元素，然后就是at，a2t, a3t...akt，其中kt<=n-1
 也就是最后一个元素不能超过数列的最后一项，因此k<=(n-1)/t，由于是从a0开始，所以最后取得的数量就是(n-1)/t + 1
 */
+// 这里的span指的是切片的范围, 而slice_length则是新维度的大小, 也就是按步长实际取到的元素数量.
                 int64_t span = arg.end_ - arg.start_;
                 int64_t slice_length = span == 0 ? 0 : 1 + (span - 1) / arg.step_;
                 newShape.push_back(slice_length);
