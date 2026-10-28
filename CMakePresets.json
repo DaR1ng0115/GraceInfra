@@ -30,13 +30,25 @@
                 "ENABLE_MAIN": "ON"
             }
         },
+
+        {
+            "name": "python",
+            "binaryDir": "${sourceDir}/build/python",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "ENABLE_PYTHON_API": "ON",
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+
         {
             "name": "clangd",
             "binaryDir": "${sourceDir}/build/clangd",
             "generator": "Ninja",
             "cacheVariables": {
                 "ENABLE_MAIN": "ON",
-                "ENABLE_TEST": "ON",
+                "ENABLE_TEST": "OFF",
+                "ENABLE_PYTHON_API": "ON",
                 "ENABLE_ASAN": "OFF",
                 "ENABLE_PERF": "OFF"
             }

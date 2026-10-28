@@ -86,6 +86,34 @@ const std::vector<int64_t>& Tensor::strides() const {
     return strides_;
 }
 
+float& Tensor::at(const std::vector<int64_t>& indices) {
+    if(indices.size() != shape_.size() || indices.size() == 0) throw poerror::DimensionException("Illegal dimensions");
+    int dim = 0;
+    for(auto idx : indices) {
+        if(idx < 0 || idx >= shape_[dim]) throw::poerror::DimensionException("Illegal dimensions");
+        dim++;
+    }
+    size_t idx = 0;
+    for(size_t i=0; i<shape_.size(); ++i) {
+        idx += indices[i] * strides_[i];
+    }
+    return buffer_ -> data_[idx+offset_];
+}
+
+const float& Tensor::at(const std::vector<int64_t>& indices) const {
+    if(indices.size() != shape_.size() || indices.size() == 0) throw poerror::DimensionException("Illegal dimensions");
+    int dim = 0;
+    for(auto idx : indices) {
+        if(idx < 0 || idx >= shape_[dim]) throw::poerror::DimensionException("Illegal dimensions");
+        dim++;
+    }
+    size_t idx = 0;
+    for(size_t i=0; i<shape_.size(); ++i) {
+        idx += indices[i] * strides_[i];
+    }
+    return buffer_ -> data_[idx+offset_];
+}
+
 size_t Tensor::offset() const {
     return offset_;
 }

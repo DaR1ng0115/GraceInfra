@@ -15,6 +15,7 @@ endif()
 option(ENABLE_MAIN "配置main程序" OFF)
 option(ENABLE_TEST "配置test程序" OFF)
 option(ENABLE_ASAN "开启内存检测" OFF)
+option(ENABLE_PYTHON_API "构建Python拓展" OFF)
 # option(ENABLE_PERF "配置perf程序" OFF)
 
 # 设置底层数据静态库
@@ -24,8 +25,13 @@ set(DATA_SOURCES
 )
 
 add_library(data STATIC ${DATA_SOURCES})
+
 target_include_directories(data PRIVATE
     ${CMAKE_SOURCE_DIR}/include
+)
+
+set_target_properties(data PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
 )
 
 # main选项编译
@@ -101,4 +107,46 @@ if(ENABLE_TEST)
     endif()
 endif()
 
+# 配置Python API拓展
+if(ENABLE_PYTHON_API)
+    # 查找 Python 解释器并构建所需模块
+    find_package(Python 3.10 REQUIRED
+        COMPONENTS Interpreter Development.Module
+    )
+
+    execute_process(
+        COMMAND "${Python_EXECUTABLE}" -m nanobind --cmake_dir
+        OUTPUT_VARIABLE nanobind_ROOT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE nanobind_result
+    )
+
+    find_package(nanobind CONFIG REQUIRED)
+
+    set(PYTHON_SOURCES
+        src/py/py_tensor.cpp
+    )
+
+    nanobind_add_module(grace ${PYTHON_SOURCES})
+
+    install(TARGETS grace
+        LIBRARY DESTINATION .
+        RUNTIME DESTINATION .
+    )
+
+    nanobind_add_stub(
+        grace_stub
+        INSTALL_TIME
+        MODULE grace
+        OUTPUT grace.pyi
+        PYTHON_PATH "."
+    )
+
+    target_include_directories(grace PRIVATE
+        ${CMAKE_SOURCE_DIR}/include
+    )
+
+    target_link_libraries(grace PRIVATE data)
+
+endif()
 

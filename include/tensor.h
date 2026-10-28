@@ -53,6 +53,8 @@ public:
     int64_t shape(int64_t dim) const;
     const std::vector<int64_t>& shape() const;
     const std::vector<int64_t>& strides() const;
+    float& at(const std::vector<int64_t>& indices);
+    const float& at(const std::vector<int64_t>& indices) const;
     size_t offset() const;
     int64_t numel() const;
 
@@ -83,8 +85,6 @@ public:
         for(size_t i=0; i<numOfArgs; ++i) {
             idx += arr[i] * strides_[i];
         }
-        // 实际上应为断言, 因为在目前的框架逻辑中, 不可能触发该异常.
-        if(idx+offset_>=buffer_->numel_) throw poerror::DimensionException("Illegal dimensions");
         return buffer_->data_[offset_+idx];
     }
 
@@ -101,7 +101,6 @@ public:
         for(size_t i=0; i<numOfArgs; ++i) {
             idx += arr[i] * strides_[i];
         }
-        if(idx+offset_>=buffer_->numel_) throw poerror::DimensionException("Illegal dimensions");
         return buffer_->data_[offset_+idx];
     }
 
