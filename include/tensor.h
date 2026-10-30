@@ -12,6 +12,7 @@
 #include <vector>
 #include <cstdint>
 #include <cstdlib>
+#include <variant>
 #include "buffer.h"
 #include "exceptions.h"
 #include "slice.h"
@@ -32,6 +33,11 @@ class Tensor {
 private:
     struct AliasTag{};
     Tensor(const Tensor& other, AliasTag);
+
+    template<class... Ts>
+    struct overloaded : Ts... { using Ts::operator()...;};
+    template<class... Ts>
+    overloaded(Ts...) -> overloaded<Ts...>;
 
     std::vector<int64_t> shape_ = {}; 
     std::vector<int64_t> strides_ = {};
@@ -55,6 +61,7 @@ public:
     const std::vector<int64_t>& strides() const;
     float& at(const std::vector<int64_t>& indices);
     const float& at(const std::vector<int64_t>& indices) const;
+    Tensor slice(std::vector<std::variant<int64_t, Slice, All>> args) const;
     size_t offset() const;
     int64_t numel() const;
 
@@ -115,7 +122,7 @@ public:
 当然，我们也推荐你使用模版递归，这是更直观的方式，在注释中我也会实现模版递归的具体代码  
 */  
     template<typename... Args, std::enable_if_t<(is_slice_v<Args> || ...), int> = 0>
-    Tensor operator()(Args... args) {
+    Tensor operator()(Args... args) const {
         constexpr size_t numOfArgs = sizeof...(args);
         if(numOfArgs != shape_.size()) throw poerror::DimensionException("Number of indices does not match tensor rank");
         Tensor sliceTensor(*this, AliasTag{});
@@ -142,7 +149,7 @@ public:
                    arg.start_ > arg.end_) throw poerror::DimensionException("Illegal dimensions");
 
 // 暂时不支持负步长
-             if(arg.step_ <= 0) throw poerror::StepException("Step must be a positive number");
+                if(arg.step_ <= 0) throw poerror::StepException("Step must be a positive number");
 /*
 这里需要考虑有step的情况，比如对于(1, 2, 3, 4, 5)，如果我令step=2，那么得到的则是(1, 3, 5)；如果是(1, 2, 3, 4)，令step=2，得到(1, 3)
 显然在step为2的情况下，元素数量为奇数时需要加1再除以2，元素数量为偶数时直接除以2

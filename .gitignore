@@ -9,3 +9,4 @@ launch_perf.bat
 compile_commands.json
 launch_perf.sh
 __pycache__
+test.py

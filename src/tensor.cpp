@@ -12,6 +12,7 @@
 #include <limits>
 #include "tensor.h"
 #include "exceptions.h"
+#include "slice.h"
 
 Tensor::Tensor(const std::vector<int64_t> &shape) 
 :shape_(shape), strides_(shape.size(), 1) {
@@ -112,6 +113,40 @@ const float& Tensor::at(const std::vector<int64_t>& indices) const {
         idx += indices[i] * strides_[i];
     }
     return buffer_ -> data_[idx+offset_];
+}
+
+Tensor Tensor::slice(std::vector<std::variant<int64_t, Slice, All>> args) const {
+    if(args.size() != shape_.size()) throw poerror::DimensionException("Number of indices does not match tensor rank");
+    Tensor sliceTensor(*this, AliasTag{});
+    std::vector<int64_t> newShape{};
+    std::vector<int64_t> newStrides{};
+    int64_t dim = 0;
+    for(auto each : args) {
+        std::visit( overloaded {
+            [&](int64_t arg) {
+                if(arg >= shape_[dim] || arg < 0) throw poerror::DimensionException("Illegal dimensions");
+                sliceTensor.offset_ += arg * strides_[dim];
+            },
+            [&](Slice& arg) {
+                if(arg.start_ < 0 || arg.end_ < 0 || arg.end_ > shape_[dim] ||
+                   arg.start_ > arg.end_) throw poerror::DimensionException("Illegal dimensions");
+                if(arg.step_ <= 0) throw poerror::StepException("Step must be a positive number");
+                int64_t span = arg.end_ - arg.start_;
+                int64_t slice_length = span == 0 ? 0 : 1 + (span - 1) / arg.step_;
+                newShape.push_back(slice_length);
+                newStrides.push_back(strides_[dim] * arg.step_);
+                sliceTensor.offset_ += arg.start_ * strides_[dim];
+            },
+            [&](All) {
+                newShape.push_back(shape_[dim]);
+                newStrides.push_back(strides_[dim]);
+            }
+        }, each);
+        dim++;
+    }
+    sliceTensor.shape_ = std::move(newShape);
+    sliceTensor.strides_ = std::move(newStrides);
+    return sliceTensor;
 }
 
 size_t Tensor::offset() const {
