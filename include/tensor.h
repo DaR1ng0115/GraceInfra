@@ -47,6 +47,7 @@ private:
     int64_t logical2phy(int64_t logical_idx) const;
     int64_t logical2phy(int64_t logical_idx, const Tensor& other) const;
     bool is_contiguous() const;
+
     
 public:
     Tensor() = default;
@@ -145,8 +146,12 @@ public:
                 if(arg >= shape_[dim] || arg < 0) throw poerror::DimensionException("Illegal dimensions");
                 sliceTensor.offset_ += arg * strides_[dim];
             } else if constexpr (std::is_same_v<argType, Slice>) {
-                if(arg.start_ < 0 || arg.end_ < 0 || arg.end_ > shape_[dim] ||
-                   arg.start_ > arg.end_) throw poerror::DimensionException("Illegal dimensions");
+                Slice slc{arg.start_, arg.end_, arg.step_};
+                if(slc.start_ < 0) slc.start_ = shape_[dim] + slc.start_ >= 0 ? shape_[dim] + slc.start_ : 0;
+                if(slc.end_   < 0) slc.end_   = shape_[dim] + slc.end_   >= 0 ? shape_[dim] + slc.end_   : 0;
+                if(slc.start_ > shape_[dim]) slc.start_ = shape_[dim];
+                if(slc.end_   > shape_[dim]) slc.end_   = shape_[dim];
+                if(slc.start_ > slc.end_) slc.end_ = slc.start_;
 
 // 暂时不支持负步长
                 if(arg.step_ <= 0) throw poerror::StepException("Step must be a positive number");
@@ -157,11 +162,11 @@ public:
 也就是最后一个元素不能超过数列的最后一项，因此k<=(n-1)/t，由于是从a0开始，所以最后取得的数量就是(n-1)/t + 1
 */
 // 这里的span指的是切片的范围, 而slice_length则是新维度的大小, 也就是按步长实际取到的元素数量.
-                int64_t span = arg.end_ - arg.start_;
-                int64_t slice_length = span == 0 ? 0 : 1 + (span - 1) / arg.step_;
+                int64_t span = slc.end_ - slc.start_;
+                int64_t slice_length = span == 0 ? 0 : 1 + (span - 1) / slc.step_;
                 newShape.push_back(slice_length);
-                newStrides.push_back(strides_[dim] * arg.step_);
-                sliceTensor.offset_ += arg.start_ * strides_[dim];
+                newStrides.push_back(strides_[dim] * slc.step_);
+                sliceTensor.offset_ += slc.start_ * strides_[dim];
             } else if constexpr (std::is_same_v<argType, All>) {
                 newShape.push_back(shape_[dim]);
                 newStrides.push_back(strides_[dim]);

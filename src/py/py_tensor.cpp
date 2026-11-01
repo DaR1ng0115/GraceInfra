@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <cstring>
 #include <vector>
+#include <variant>
 
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/vector.h>
@@ -32,39 +33,24 @@ NB_MODULE(grace, m) {
             else if(nb::isinstance<nb::slice>(item)) {
                 has_slice = true;
             } else {
-                throw nb::type_error("Indices must be intrgers or slices");
+                throw nb::type_error("Indices must be integers or slices");
             }
         }
 
         if(has_slice) {
+            int64_t dim = 0;
             std::vector<std::variant<int64_t, Slice, All>> indices;
             for(auto item : keys) {
                 if(nb::isinstance<nb::int_>(item)) {
                     indices.emplace_back(nb::cast<int64_t>(item));
                 } else {
-                    nb::object start = item.attr("start");
-                    nb::object stop  = item.attr("stop");
-                    nb::object step  = item.attr("step");
-
-                    if(start.is_none() && stop.is_none() && step.is_none()) {
-                        indices.emplace_back(All{});
-                        continue;
-                    }
-                    if(start.is_none() || stop.is_none()) {
-                        throw nb::type_error("Slice start and stop are required");
-                    }
-                    Slice s{
-                        nb::cast<int64_t>(start),
-                        nb::cast<int64_t>(stop)
-                    };
-                    if(!step.is_none()) {
-                        s.step_ = nb::cast<int64_t>(step);
-                    }
-                    if(s.step_ <= 0) {
-                        throw nb::value_error("Slice step must be positive");
-                    }
-                    indices.emplace_back(s);
+                    nb::slice slc = nb::cast<nb::slice>(item);
+                    auto [start, stop, step, slice_length] = slc.compute(t.shape(dim));
+                    if(step <= 0) throw nb::value_error("Slice step must be positive");
+                    if(start > stop) stop = start;
+                    indices.emplace_back(Slice{start, stop, step});
                 }
+                ++dim;
             }
             return nb::cast(t.slice(indices));
         } else {
