@@ -10,3 +10,10 @@ TEST(SliceFunc, NegativeSlice) {
     EXPECT_EQ(t1(Slice{0, -20}, all).shape(), (std::vector<int64_t>{0, 32}));
     EXPECT_EQ(t1(Slice{-3, 16}, all).shape(), (std::vector<int64_t>{3, 32}));
 }
+
+TEST(IndicesFunc, NegativeIndices) {
+    Tensor t1({12, 8}, 2.8);
+    EXPECT_FLOAT_EQ(t1(11, -1), 2.8);
+    t1(11, -1) = 5.1;
+    EXPECT_FLOAT_EQ(t1(11, -1), 5.1);
+}

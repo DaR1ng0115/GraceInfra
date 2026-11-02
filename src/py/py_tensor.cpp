@@ -1,3 +1,8 @@
+//
+// py_tensor.cpp
+//
+// Created by DaR1ng on 26-10-28
+
 #include "tensor.h"
 
 #include <cstdint>
@@ -9,6 +14,19 @@
 #include <nanobind/stl/vector.h>
 
 namespace nb = nanobind;
+
+static std::vector<int64_t> process_negative(const Tensor& t, nb::tuple keys) {
+    std::vector<int64_t> indices;
+    int64_t dim = 0;
+    for(auto each : keys) {
+        if(!nb::isinstance<nb::int_>(each)) throw nb::type_error("Indices must be integer");
+        int64_t item = nb::cast<int64_t>(each);
+        if(item < 0) item += t.shape(dim);
+        indices.push_back(item);
+        ++dim;
+    }  
+    return indices;
+}
 
 NB_MODULE(grace, m) {
     nb::class_<Tensor>(m, "Tensor")
@@ -42,7 +60,9 @@ NB_MODULE(grace, m) {
             std::vector<std::variant<int64_t, Slice, All>> indices;
             for(auto item : keys) {
                 if(nb::isinstance<nb::int_>(item)) {
-                    indices.emplace_back(nb::cast<int64_t>(item));
+                    int64_t integer = nb::cast<int64_t>(item);
+                    if(integer < 0) integer += t.shape(dim);
+                    indices.emplace_back(integer);
                 } else {
                     nb::slice slc = nb::cast<nb::slice>(item);
                     auto [start, stop, step, slice_length] = slc.compute(t.shape(dim));
@@ -54,12 +74,18 @@ NB_MODULE(grace, m) {
             }
             return nb::cast(t.slice(indices));
         } else {
-            auto indices = nb::cast<std::vector<int64_t>>(keys);
+            std::vector<int64_t> indices = process_negative(t, keys);
             return nb::cast(t.at(indices));
         }
     })
-    .def("__setitem__", [](Tensor& t, nb::tuple key, float value) {
-        auto indices = nb::cast<std::vector<int64_t>>(key);
+    .def("__setitem__", [](Tensor& t, nb::handle key, float value) {
+        nb::tuple keys;
+        if(nb::isinstance<nb::tuple>(key)) {
+            keys = nb::borrow<nb::tuple>(key);
+        } else {
+            keys = nb::make_tuple(key);
+        }
+        std::vector<int64_t> indices = process_negative(t, keys);
         t.at(indices) = value;
     });
 }
