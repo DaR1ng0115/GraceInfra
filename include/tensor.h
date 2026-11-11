@@ -8,6 +8,7 @@
 #pragma once
 #include <array>
 #include <cstddef>
+#include <string>
 #include <type_traits>
 #include <vector>
 #include <cstdint>
@@ -51,6 +52,7 @@ public:
     int64_t shape(int64_t dim) const;
     const std::vector<int64_t>& shape() const;
     const std::vector<int64_t>& strides() const;
+    int64_t ndim() const;
     float& at(const std::vector<int64_t>& indices);
     const float& at(const std::vector<int64_t>& indices) const;
     Tensor slice(std::vector<std::variant<int64_t, Slice, All>> args) const;
@@ -66,10 +68,12 @@ public:
         constexpr size_t numOfArgs = sizeof...(args);
         std::array<int64_t, numOfArgs> arr = {args...};
         // 判断参数包里的参数是否合法
-        if(numOfArgs == 0 || numOfArgs != shape_.size()) throw poerror::DimensionException("Illegal dimensions");
+        if(numOfArgs == 0 || numOfArgs != shape_.size()) throw poerror::IndexException(
+            "Number of arguments: " + std::to_string(numOfArgs) + " are not matching");
         for(size_t i=0; i<numOfArgs; ++i) {
             if(arr[i] < 0) arr[i] += shape_[i];
-            if(arr[i] < 0 || arr[i] >= shape_[i]) throw poerror::DimensionException("Illegal dimensions");
+            if(arr[i] < 0 || arr[i] >= shape_[i]) throw poerror::IndexException(
+                "Illagel Dimensions: " + std::to_string(arr[i]));
         }
         // 求实际索引值(需要加上offset)
         size_t idx = 0;
@@ -84,10 +88,12 @@ public:
     const float& operator()(Args... args) const {
         constexpr size_t numOfArgs = sizeof...(args);
         std::array<int64_t, numOfArgs> arr = {args...};
-        if(numOfArgs == 0 || numOfArgs != shape_.size()) throw poerror::DimensionException("Illegal dimensions");
+        if(numOfArgs == 0 || numOfArgs != shape_.size()) throw poerror::IndexException(
+            "Number of arguments: " + std::to_string(numOfArgs) + " are not matching");
         for(size_t i=0; i<numOfArgs; ++i) {
             if(arr[i] < 0) arr[i] += shape_[i];
-            if(arr[i] < 0 || arr[i] >= shape_[i]) throw poerror::DimensionException("Illegal dimensions");
+            if(arr[i] < 0 || arr[i] >= shape_[i]) throw poerror::IndexException(
+                "Number of arguments: " + std::to_string(numOfArgs) + "are not matching");
         }
         size_t idx = 0;
         for(size_t i=0; i<numOfArgs; ++i) {
@@ -99,7 +105,8 @@ public:
     template<typename... Args, std::enable_if_t<(is_slice_v<Args> || ...), int> = 0>
     Tensor operator()(Args... args) const {
         constexpr size_t numOfArgs = sizeof...(args);
-        if(numOfArgs != shape_.size()) throw poerror::DimensionException("Number of indices does not match tensor rank");
+        if(numOfArgs != shape_.size()) throw poerror::IndexException(
+            "Number of indices: " + std::to_string(numOfArgs) + " does not match tensor rank");
         Tensor sliceTensor(*this, AliasTag{});
         std::vector<int64_t> newShape{};
         std::vector<int64_t> newStrides{};
@@ -109,7 +116,8 @@ public:
             if constexpr (std::is_integral_v<argType>) {
                 int64_t idx = arg;
                 if(idx < 0) idx += shape_[dim];
-                if(idx >= shape_[dim] || idx < 0) throw poerror::DimensionException("Illegal dimensions");
+                if(idx >= shape_[dim] || idx < 0) throw poerror::IndexException(
+                    "Illegal dimensions: " + std::to_string(idx));
                 sliceTensor.offset_ += idx * strides_[dim];
             } else if constexpr (std::is_same_v<argType, Slice>) {
                 Slice slc{arg.start_, arg.end_, arg.step_};
@@ -120,7 +128,8 @@ public:
                 if(slc.start_ > slc.end_) slc.end_ = slc.start_;
 
 // 暂时不支持负步长
-                if(arg.step_ <= 0) throw poerror::StepException("Step must be a positive number");
+                if(arg.step_ <= 0) throw poerror::StepException(
+                    "Step: " + std::to_string(arg.step) + " must be a positive number");
                 int64_t span = slc.end_ - slc.start_;
                 int64_t slice_length = span == 0 ? 0 : 1 + (span - 1) / slc.step_;
                 newShape.push_back(slice_length);

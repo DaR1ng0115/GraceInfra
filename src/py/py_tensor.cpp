@@ -38,6 +38,7 @@ NB_MODULE(grace, m) {
         nb::object dims = nb::cast(t.shape());
         return  nb::tuple(dims);
     })
+    .def_prop_ro("ndim", &Tensor::ndim)
     .def("__getitem__", [](const Tensor& t, nb::handle key) -> nb::object {
         nb::tuple keys;
         if(nb::isinstance<nb::tuple>(key)) {
@@ -87,5 +88,8 @@ NB_MODULE(grace, m) {
         }
         std::vector<int64_t> indices = process_negative(t, keys);
         t.at(indices) = value;
+    })
+    .def("__add__", [](const Tensor& lhs, const Tensor& rhs) {
+        return lhs + rhs;
     });
 }

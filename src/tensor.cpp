@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <utility>
 #include <limits>
 #include "tensor.h"
@@ -17,7 +18,8 @@
 Tensor::Tensor(const std::vector<int64_t> &shape) 
 :shape_(shape), strides_(shape.size(), 1) {
     for(auto dim : shape) {
-        if(dim < 0) throw poerror::DimensionException("Illegal dimensions");
+        if(dim < 0) throw poerror::ValueException(
+            "Negative dimension is not supported: " + std::to_string(dim));
     }
     for(int64_t j=static_cast<int64_t>(shape.size())-1; j>0; --j) {
         bool issafe = safe_multiply(strides_[j], shape_[j], strides_[j-1]);
@@ -30,7 +32,8 @@ Tensor::Tensor(const std::vector<int64_t> &shape)
 Tensor::Tensor(const std::vector<int64_t> &shape, float fill_data)
 :shape_(shape), strides_(shape.size(), 1) {
     for(auto dim : shape) {
-        if(dim < 0) throw poerror::DimensionException("Illegal dimensions");
+        if(dim < 0) throw poerror::ValueException(
+            "Negative dimension is not supported: " + std::to_string(dim));
     }
     for(int64_t j=static_cast<int64_t>(shape.size())-1; j>0; --j) {
         bool issafe = safe_multiply(strides_[j], shape_[j], strides_[j-1]);
@@ -75,7 +78,8 @@ Tensor::~Tensor() {
 }
 
 int64_t Tensor::shape(int64_t dim) const {
-    if(dim < 0 || dim >= static_cast<int64_t>(shape_.size())) throw poerror::DimensionException("Illegal dimensions");
+    if(dim < 0 || dim >= static_cast<int64_t>(shape_.size())) throw poerror::IndexException(
+        "Illegal dimensions: " + std::to_string(dim));
     return shape_[dim];
 }
 
@@ -87,11 +91,17 @@ const std::vector<int64_t>& Tensor::strides() const {
     return strides_;
 }
 
+int64_t Tensor::ndim() const {
+    return shape_.size();
+}
+
 float& Tensor::at(const std::vector<int64_t>& indices) {
-    if(indices.size() != shape_.size() || indices.size() == 0) throw poerror::DimensionException("Illegal dimensions");
+    if(indices.size() != shape_.size() || indices.size() == 0) throw poerror::IndexException(
+        "Number of arguments: " + std::to_string(indices.size()) + " are not matching");
     int dim = 0;
     for(auto idx : indices) {
-        if(idx < 0 || idx >= shape_[dim]) throw::poerror::DimensionException("Illegal dimensions");
+        if(idx < 0 || idx >= shape_[dim]) throw::poerror::IndexException(
+            "Illegal dimensions: " + std::to_string(idx));
         dim++;
     }
     size_t idx = 0;
@@ -102,10 +112,12 @@ float& Tensor::at(const std::vector<int64_t>& indices) {
 }
 
 const float& Tensor::at(const std::vector<int64_t>& indices) const {
-    if(indices.size() != shape_.size() || indices.size() == 0) throw poerror::DimensionException("Illegal dimensions");
+    if(indices.size() != shape_.size() || indices.size() == 0) throw poerror::IndexException(
+        "Number of arguments: " + std::to_string(indices.size()) + " are not matching");
     int dim = 0;
     for(auto idx : indices) {
-        if(idx < 0 || idx >= shape_[dim]) throw::poerror::DimensionException("Illegal dimensions");
+        if(idx < 0 || idx >= shape_[dim]) throw::poerror::IndexException(
+            "Illegal dimensions: " + std::to_string(idx));
         dim++;
     }
     size_t idx = 0;
@@ -116,7 +128,8 @@ const float& Tensor::at(const std::vector<int64_t>& indices) const {
 }
 
 Tensor Tensor::slice(std::vector<std::variant<int64_t, Slice, All>> args) const {
-    if(args.size() != shape_.size()) throw poerror::DimensionException("Number of indices does not match tensor rank");
+    if(args.size() != shape_.size()) throw poerror::IndexException(
+        "Number of indices: " + std::to_string(args.size()) + " does not match tensor rank");
     Tensor sliceTensor(*this, AliasTag{});
     std::vector<int64_t> newShape{};
     std::vector<int64_t> newStrides{};
@@ -124,12 +137,15 @@ Tensor Tensor::slice(std::vector<std::variant<int64_t, Slice, All>> args) const 
     for(auto each : args) {
         std::visit( overloaded {
             [&](int64_t arg) {
-                if(arg >= shape_[dim] || arg < 0) throw poerror::DimensionException("Illegal dimensions");
+                if(arg >= shape_[dim] || arg < 0) throw poerror::IndexException(
+                    "Illegal dimensions: " + std::to_string(arg));
                 sliceTensor.offset_ += arg * strides_[dim];
             },
             [&](Slice& arg) {
-                if(arg.start_ < 0 || arg.end_ < 0 || arg.end_ > shape_[dim] ||
-                   arg.start_ > arg.end_) throw poerror::DimensionException("Illegal dimensions");
+                if(arg.start_ < 0) throw poerror::IndexException(
+                    "start must be positive: " + std::to_string(arg.start_));
+                if(arg.end_ < 0 || arg.end_ > shape_[dim]) throw poerror::IndexException(
+                    "Illegal dimensions: " + std::to_string(arg.end_));
                 if(arg.step_ <= 0) throw poerror::StepException("Step must be a positive number");
                 int64_t span = arg.end_ - arg.start_;
                 int64_t slice_length = span == 0 ? 0 : 1 + (span - 1) / arg.step_;
@@ -175,13 +191,8 @@ bool Tensor::safe_multiply(int64_t a, int64_t b, int64_t& result) {
     return true;
 }
 
-// 在实现了切片之后，每个tensor的索引不一定是实际在buffer中的索引，我们改变的是tensor所携带的信息，但当我们需要直接
-// 读取或修改buffer的数据的时候，比如在加法的运算符重载中，直接写buffer_[i+offset_]是不对的，因为在此处我们并没有考
-// 虑到shape和step。
-// 因此需要将逻辑索引先转化为坐标的形式，然后通过strides计算在buffer上的实际一维索引
-
 int64_t Tensor::logical2phy(int64_t logical_idx) const {
-    if(logical_idx < 0 || logical_idx >= numel()) throw poerror::DimensionException("Idx out of range");
+    assert(logical_idx < 0 || logical_idx >= numel());
     int64_t coordinate = 0;
     int64_t physical_idx = offset_;
     for(int i=static_cast<int64_t>(shape_.size())-1; i>=0; --i) {
@@ -191,16 +202,10 @@ int64_t Tensor::logical2phy(int64_t logical_idx) const {
     }
 
     return physical_idx;
-// 不知道读者看到这里的时候，会不会想到:如果在加法运算符重载的循环中，每次都调用这个函数计算物理索引，可能会显著减慢运行速度
-// 但我们暂且不谈这个算法本身是否可以优化到更好，我们可以思考一下，哪些情况下实际上不需要转化
-// 最先能想到的大概是完整的tensor，内部没有经过任何切片；其次被切片了，但内部有大块的连续索引，尤其是无step的，这实际上也能避免一些转换
-// 我们现在先只对整块完全连续的tensor进行优化，简单来说，就是用一个条件判断来判断其是否拥有一个完整的连续数据块
-// 比如对一个5x5的矩阵，经过切片之后，变成了3x5的矩阵，offset变为10，形状变为(3, 5)，但是你可以发现，(5, 5)和(3, 5)计算出来的
-// strides是完全一样的，因此我们可以借助这个性质，通过计算expect_strides是否符合预期
 }
 
 int64_t Tensor::logical2phy(int64_t logical_idx, const Tensor& other) const {
-    if(logical_idx < 0 || logical_idx >= numel()) throw poerror::DimensionException("Idx out of range");
+    assert(logical_idx < 0 || logical_idx >= numel());
     int64_t res_ndim     = static_cast<int64_t>(shape_.size());
     int64_t other_ndim   = static_cast<int64_t>(other.shape().size());
     int64_t physical_idx = other.offset();
@@ -231,29 +236,11 @@ bool Tensor::is_contiguous() const {
     return true;
 }
 
-// 这一章中，我们需要实现张量加法的广播机制，此处不再解释广播的概念，从哪些情况可以广播开始
-// 1.如(4, 5),(1, 5); 2.如(4, 5),(5,) 但注意，因为对齐顺序是从右往左对齐，所以(4, 5),(4,)不符合广播，原因后续会解释
-// 3.如(4, 1),(1, 5); 4.如(4, 5),2（标量）(注: 本框架中空shape不是标量, 和numpy不同)
-
-// 为什么对齐顺序是从右往左？
-// 首先我们需要找到源头，在张量的维度中，外层维度（即左边的维度）的语义是容器，内层维度是内容。
-// 举个例子:一个(2, 3)的矩阵
-// [
-//  [1, 2, 3]
-//  [4, 5, 6]
-// ]
-// 在我们使用习惯中，[1, 2, 3],[4, 5, 6]是两个同类型的向量数据，而'2'则是描述有多少个这样的向量
-// 那么如果有一个形状为(3,)的向量，比如[1, 3, 5]，我们是不是可以理解为：将这一个向量“复制”两份，加到原来的矩阵中
-// 因此，这个从右往左对齐的逻辑是由人为约定的容器和内容的定义所决定的
-
-// 现在，我们可以梳理一下，在进行广播的时候，应该有哪些步骤
-// 首先是整个流程需要由遍历循环决定，即遍历进行加法的张量的shape
-// 在该循环中，应进行两种操作:1.右对齐，检查对应的维度是否相等，如果不相等，其中一个维度是否是1。
-// 2.当均存在的维度遍历完成后且符合广播时，按照广播规则进行广播。
 Tensor Tensor::operator+(const Tensor& other) const {
     const auto& lhs_tensor = *this;
     const auto& rhs_tensor = other;
-    if(lhs_tensor.shape_.empty() || rhs_tensor.shape_.empty()) throw poerror::DimensionException("Empty tensor can not be added");
+    if(lhs_tensor.shape_.empty() || rhs_tensor.shape_.empty()) throw poerror::ValueException(
+        "Empty tensor can not be added");
     size_t max = std::max(lhs_tensor.shape_.size(), rhs_tensor.shape_.size());
     size_t lhs_size = lhs_tensor.shape_.size();
     size_t rhs_size = rhs_tensor.shape_.size();
@@ -261,7 +248,9 @@ Tensor Tensor::operator+(const Tensor& other) const {
     for(int64_t k=0; k<max; ++k) {
         int64_t lhs_dim = k<lhs_size ? lhs_tensor.shape_[lhs_size-1-k] : 1;
         int64_t rhs_dim = k<rhs_size ? rhs_tensor.shape_[rhs_size-1-k] : 1;
-        if(lhs_dim != rhs_dim && lhs_dim != 1 && rhs_dim != 1) throw poerror::DimensionException("Dimensions can not be broadcast");
+        // TODO: 报错信息中显示张量形状
+        if(lhs_dim != rhs_dim && lhs_dim != 1 && rhs_dim != 1) throw poerror::ValueException(
+            "Dimensions can not be broadcast");
         shape[max-1-k] = lhs_dim == 1 ? rhs_dim : lhs_dim;
     }
     Tensor res(shape);

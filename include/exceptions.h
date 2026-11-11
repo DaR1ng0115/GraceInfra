@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <exception>
+#include <new>
 #include <stdexcept>
 
 namespace poerror {
@@ -19,7 +21,12 @@ namespace poerror {
         using GraceException::GraceException;
     };
 
-    class DimensionException : public GraceException {
+    class IndexException : public GraceException {
+    public:
+        using GraceException::GraceException;
+    };
+
+    class ValueException : public GraceException {
     public:
         using GraceException::GraceException;
     };
