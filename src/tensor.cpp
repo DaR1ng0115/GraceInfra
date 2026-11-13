@@ -100,7 +100,7 @@ float& Tensor::at(const std::vector<int64_t>& indices) {
         "Number of arguments: " + std::to_string(indices.size()) + " are not matching");
     int dim = 0;
     for(auto idx : indices) {
-        if(idx < 0 || idx >= shape_[dim]) throw::poerror::IndexException(
+        if(idx < 0 || idx >= shape_[dim]) throw poerror::IndexException(
             "Illegal dimensions: " + std::to_string(idx));
         dim++;
     }
@@ -116,7 +116,7 @@ const float& Tensor::at(const std::vector<int64_t>& indices) const {
         "Number of arguments: " + std::to_string(indices.size()) + " are not matching");
     int dim = 0;
     for(auto idx : indices) {
-        if(idx < 0 || idx >= shape_[dim]) throw::poerror::IndexException(
+        if(idx < 0 || idx >= shape_[dim]) throw poerror::IndexException(
             "Illegal dimensions: " + std::to_string(idx));
         dim++;
     }
@@ -143,9 +143,11 @@ Tensor Tensor::slice(std::vector<std::variant<int64_t, Slice, All>> args) const 
             },
             [&](Slice& arg) {
                 if(arg.start_ < 0) throw poerror::IndexException(
-                    "start must be positive: " + std::to_string(arg.start_));
+                    "Start must be positive: " + std::to_string(arg.start_));
                 if(arg.end_ < 0 || arg.end_ > shape_[dim]) throw poerror::IndexException(
                     "Illegal dimensions: " + std::to_string(arg.end_));
+                if(arg.start_ > arg.end_) throw poerror::IndexException(
+                    "End must greater than start");
                 if(arg.step_ <= 0) throw poerror::StepException("Step must be a positive number");
                 int64_t span = arg.end_ - arg.start_;
                 int64_t slice_length = span == 0 ? 0 : 1 + (span - 1) / arg.step_;
@@ -192,7 +194,7 @@ bool Tensor::safe_multiply(int64_t a, int64_t b, int64_t& result) {
 }
 
 int64_t Tensor::logical2phy(int64_t logical_idx) const {
-    assert(logical_idx < 0 || logical_idx >= numel());
+    assert(logical_idx >= 0 && logical_idx < numel());
     int64_t coordinate = 0;
     int64_t physical_idx = offset_;
     for(int i=static_cast<int64_t>(shape_.size())-1; i>=0; --i) {
@@ -205,7 +207,7 @@ int64_t Tensor::logical2phy(int64_t logical_idx) const {
 }
 
 int64_t Tensor::logical2phy(int64_t logical_idx, const Tensor& other) const {
-    assert(logical_idx < 0 || logical_idx >= numel());
+    assert(logical_idx >= 0 && logical_idx < numel());
     int64_t res_ndim     = static_cast<int64_t>(shape_.size());
     int64_t other_ndim   = static_cast<int64_t>(other.shape().size());
     int64_t physical_idx = other.offset();

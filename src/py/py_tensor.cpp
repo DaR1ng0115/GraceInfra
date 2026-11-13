@@ -3,14 +3,18 @@
 //
 // Created by DaR1ng on 26-10-28
 
+#include "exceptions.h"
 #include "tensor.h"
 
 #include <cstdint>
 #include <cstring>
+#include <exception>
 #include <vector>
 #include <variant>
 
 #include <nanobind/nanobind.h>
+#include <Python.h>
+#include <pyerrors.h>
 #include <nanobind/stl/vector.h>
 
 namespace nb = nanobind;
@@ -91,5 +95,18 @@ NB_MODULE(grace, m) {
     })
     .def("__add__", [](const Tensor& lhs, const Tensor& rhs) {
         return lhs + rhs;
+    });
+    nb::register_exception_translator([](const std::exception_ptr& p, void*) {
+        try {
+            std::rethrow_exception(p);
+        } catch(const poerror::IndexException& e) {
+            PyErr_SetString(PyExc_IndexError, e.what());
+        } catch(const poerror::ValueException& e) {
+            PyErr_SetString(PyExc_ValueError, e.what());
+        } catch(const poerror::OverflowException& e) {
+            PyErr_SetString(PyExc_OverflowError, e.what());
+        } catch(const poerror::MemoryException& e) {
+            PyErr_SetString(PyExc_MemoryError, e.what());
+        }
     });
 }

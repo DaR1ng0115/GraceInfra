@@ -69,11 +69,12 @@ public:
         std::array<int64_t, numOfArgs> arr = {args...};
         // 判断参数包里的参数是否合法
         if(numOfArgs == 0 || numOfArgs != shape_.size()) throw poerror::IndexException(
-            "Number of arguments: " + std::to_string(numOfArgs) + " are not matching");
+            "Number of arguments: " + std::to_string(numOfArgs) + " are not matching. "
+            + "Should provide " + std::to_string(shape_.size()) + " arguments");
         for(size_t i=0; i<numOfArgs; ++i) {
             if(arr[i] < 0) arr[i] += shape_[i];
             if(arr[i] < 0 || arr[i] >= shape_[i]) throw poerror::IndexException(
-                "Illagel Dimensions: " + std::to_string(arr[i]));
+                "Illegal Dimensions: " + std::to_string(arr[i]));
         }
         // 求实际索引值(需要加上offset)
         size_t idx = 0;
@@ -93,7 +94,7 @@ public:
         for(size_t i=0; i<numOfArgs; ++i) {
             if(arr[i] < 0) arr[i] += shape_[i];
             if(arr[i] < 0 || arr[i] >= shape_[i]) throw poerror::IndexException(
-                "Number of arguments: " + std::to_string(numOfArgs) + "are not matching");
+                "Illegal Dimensions: " + std::to_string(arr[i]));
         }
         size_t idx = 0;
         for(size_t i=0; i<numOfArgs; ++i) {
@@ -129,7 +130,7 @@ public:
 
 // 暂时不支持负步长
                 if(arg.step_ <= 0) throw poerror::StepException(
-                    "Step: " + std::to_string(arg.step) + " must be a positive number");
+                    "Step: " + std::to_string(arg.step_) + " must be a positive number");
                 int64_t span = slc.end_ - slc.start_;
                 int64_t slice_length = span == 0 ? 0 : 1 + (span - 1) / slc.step_;
                 newShape.push_back(slice_length);
