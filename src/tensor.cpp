@@ -147,7 +147,7 @@ Tensor Tensor::slice(std::vector<std::variant<int64_t, Slice, All>> args) const 
                 if(arg.end_ < 0 || arg.end_ > shape_[dim]) throw poerror::IndexException(
                     "Illegal dimensions: " + std::to_string(arg.end_));
                 if(arg.start_ > arg.end_) throw poerror::IndexException(
-                    "End must greater than start");
+                    "End must be greater than start");
                 if(arg.step_ <= 0) throw poerror::StepException("Step must be a positive number");
                 int64_t span = arg.end_ - arg.start_;
                 int64_t slice_length = span == 0 ? 0 : 1 + (span - 1) / arg.step_;
@@ -239,33 +239,19 @@ bool Tensor::is_contiguous() const {
 }
 
 Tensor Tensor::operator+(const Tensor& other) const {
-    const auto& lhs_tensor = *this;
-    const auto& rhs_tensor = other;
-    if(lhs_tensor.shape_.empty() || rhs_tensor.shape_.empty()) throw poerror::ValueException(
-        "Empty tensor can not be added");
-    size_t max = std::max(lhs_tensor.shape_.size(), rhs_tensor.shape_.size());
-    size_t lhs_size = lhs_tensor.shape_.size();
-    size_t rhs_size = rhs_tensor.shape_.size();
-    std::vector<int64_t> shape(max, 1);
-    for(int64_t k=0; k<max; ++k) {
-        int64_t lhs_dim = k<lhs_size ? lhs_tensor.shape_[lhs_size-1-k] : 1;
-        int64_t rhs_dim = k<rhs_size ? rhs_tensor.shape_[rhs_size-1-k] : 1;
-        // TODO: 报错信息中显示张量形状
-        if(lhs_dim != rhs_dim && lhs_dim != 1 && rhs_dim != 1) throw poerror::ValueException(
-            "Dimensions can not be broadcast");
-        shape[max-1-k] = lhs_dim == 1 ? rhs_dim : lhs_dim;
-    }
-    Tensor res(shape);
-    int64_t numel = res.numel();
-    bool lhs_fast = this->is_contiguous() && lhs_tensor.shape_ == res.shape_;
-    bool rhs_fast = other.is_contiguous() && rhs_tensor.shape_ == res.shape_;
-    for(int64_t i=0; i<numel; ++i) {
-        int64_t lhs_phy_idx = lhs_fast ? i+lhs_tensor.offset_ : res.logical2phy(i, lhs_tensor);
-        int64_t rhs_phy_idx = rhs_fast ? i+rhs_tensor.offset_ : res.logical2phy(i, rhs_tensor);
+    return binary_op(other, [](float a, float b){ return a+b; });
+}
 
-        res.buffer_->data_[i] = buffer_->data_[lhs_phy_idx] + other.buffer_->data_[rhs_phy_idx];
-    }
-    return res;
+Tensor Tensor::operator-(const Tensor& other) const {
+    return binary_op(other, [](float a, float b){ return a-b; });
+}
+
+Tensor Tensor::operator*(const Tensor& other) const {
+    return binary_op(other, [](float a, float b){return a*b; });
+}
+
+Tensor Tensor::operator/(const Tensor& other) const {
+    return binary_op(other, [](float a, float b){return a/b; });
 }
 
 Tensor& Tensor::operator=(const Tensor& other) {

@@ -4,21 +4,23 @@
 // Created by DaR1ng on 26-10-28
 
 #include "exceptions.h"
+#include "slice.h"
 #include "tensor.h"
 
 #include <cstdint>
 #include <cstring>
 #include <exception>
+#include <string>
 #include <vector>
 #include <variant>
 
 #include <nanobind/nanobind.h>
-#include <Python.h>
-#include <pyerrors.h>
 #include <nanobind/stl/vector.h>
+#include <nanobind/stl/string.h>
 
 namespace nb = nanobind;
 
+// 处理负数索引, 比如-1则是取该维度的最后一个元素, 即-1+shape(dim), 如果加上之后仍为负数则报错
 static std::vector<int64_t> process_negative(const Tensor& t, nb::tuple keys) {
     std::vector<int64_t> indices;
     int64_t dim = 0;
@@ -26,6 +28,7 @@ static std::vector<int64_t> process_negative(const Tensor& t, nb::tuple keys) {
         if(!nb::isinstance<nb::int_>(each)) throw nb::type_error("Indices must be integer");
         int64_t item = nb::cast<int64_t>(each);
         if(item < 0) item += t.shape(dim);
+        if(item < 0) throw poerror::IndexException("Illegal dimensions: " + std::to_string(item-t.shape(dim)));
         indices.push_back(item);
         ++dim;
     }  
@@ -51,13 +54,18 @@ NB_MODULE(grace, m) {
             keys = nb::make_tuple(key);
         }
         bool has_slice = false;
+        int64_t numOfArgs = 0;
         for(auto item : keys) {
+            numOfArgs++;
             if(nb::isinstance<nb::int_>(item)) {}
             else if(nb::isinstance<nb::slice>(item)) {
                 has_slice = true;
             } else {
                 throw nb::type_error("Indices must be integers or slices");
             }
+        }
+        if(numOfArgs < t.ndim()) {
+            has_slice = true;
         }
 
         if(has_slice) {
@@ -67,15 +75,19 @@ NB_MODULE(grace, m) {
                 if(nb::isinstance<nb::int_>(item)) {
                     int64_t integer = nb::cast<int64_t>(item);
                     if(integer < 0) integer += t.shape(dim);
-                    indices.emplace_back(integer);
+                    if(integer < 0) throw poerror::IndexException("Illegal dimensions: " + std::to_string(integer-t.shape(dim)));
+                    indices.push_back(integer);
                 } else {
                     nb::slice slc = nb::cast<nb::slice>(item);
                     auto [start, stop, step, slice_length] = slc.compute(t.shape(dim));
-                    if(step <= 0) throw nb::value_error("Slice step must be positive");
+                    if(step <= 0) throw poerror::ValueException("Slice step must be positive");
                     if(start > stop) stop = start;
-                    indices.emplace_back(Slice{start, stop, step});
+                    indices.push_back(Slice{start, stop, step});
                 }
                 ++dim;
+            }
+            while(indices.size() < t.ndim()) {
+                indices.push_back(All{});
             }
             return nb::cast(t.slice(indices));
         } else {
@@ -95,6 +107,25 @@ NB_MODULE(grace, m) {
     })
     .def("__add__", [](const Tensor& lhs, const Tensor& rhs) {
         return lhs + rhs;
+    })
+    .def("__sub__", [](const Tensor& lhs, const Tensor& rhs) {
+        return lhs - rhs;
+    })
+    .def("__mul__", [](const Tensor& lhs, const Tensor& rhs) {
+        return lhs * rhs;
+    })
+    .def("__truediv__", [](const Tensor& lhs, const Tensor& rhs) {
+        return lhs / rhs;
+    })
+    .def("__repr__", [](const Tensor& t) {
+        std::string s = "Tensor(";
+        for(auto n : t.shape()) {
+            s.append(std::to_string(n));
+            s.append(", ");
+        }
+        s.erase(s.size()-2, 2);
+        s.append(")");
+        return s;
     });
     nb::register_exception_translator([](const std::exception_ptr& p, void*) {
         try {

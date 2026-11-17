@@ -40,6 +40,43 @@ private:
     int64_t logical2phy(int64_t logical_idx, const Tensor& other) const;
     bool is_contiguous() const;
 
+
+// 此处将广播机制抽离出来, 作为一个通用逻辑使用, 满足广播规则的加法、减法、逐元素乘法、除法均可以被广播
+
+    template <typename Op>
+    Tensor binary_op(const Tensor& other, Op op) const {
+        const auto& lhs_tensor = *this;
+        const auto& rhs_tensor = other;
+// 空张量不参与二元运算
+        if(lhs_tensor.shape_.empty() || rhs_tensor.shape_.empty()) throw poerror::ValueException(
+            "Empty tensor can not perform a binary operation ");
+// 找出两者之间的最大维度数以确定广播后的张量形状
+        size_t max_ndim = std::max(lhs_tensor.ndim(), rhs_tensor.ndim());
+        size_t lhs_ndim = lhs_tensor.ndim();
+        size_t rhs_ndim = rhs_tensor.ndim();
+        std::vector<int64_t> shape(max_ndim, 1);
+        for(int64_t k=0; k<max_ndim; ++k) {
+// 从右向左对齐, 同时判断两个张量该维度是否存在, 不存在的直接补1
+            int64_t lhs_dim = k<lhs_ndim ? lhs_tensor.shape_[lhs_ndim-1-k] : 1;
+            int64_t rhs_dim = k<rhs_ndim ? rhs_tensor.shape_[rhs_ndim-1-k] : 1;
+            // TODO: 报错信息中显示张量形状
+            if(lhs_dim != rhs_dim && lhs_dim != 1 && rhs_dim != 1) throw poerror::ValueException(
+                "Dimensions can not be broadcast");
+            shape[max_ndim-1-k] = lhs_dim == 1 ? rhs_dim : lhs_dim;
+        }
+        Tensor res(shape);
+        int64_t numel = res.numel();
+        bool lhs_fast = this->is_contiguous() && lhs_tensor.shape_ == res.shape_;
+        bool rhs_fast = other.is_contiguous() && rhs_tensor.shape_ == res.shape_;
+        for(int64_t i=0; i<numel; ++i) {
+            int64_t lhs_phy_idx = lhs_fast ? i+lhs_tensor.offset_ : res.logical2phy(i, lhs_tensor);
+            int64_t rhs_phy_idx = rhs_fast ? i+rhs_tensor.offset_ : res.logical2phy(i, rhs_tensor);
+
+            res.buffer_->data_[i] = op(buffer_->data_[lhs_phy_idx], other.buffer_->data_[rhs_phy_idx]);
+        }
+        return res;
+    }
+
     
 public:
     Tensor() = default;
@@ -60,6 +97,9 @@ public:
     int64_t numel() const;
 
     Tensor operator+(const Tensor& other) const;
+    Tensor operator-(const Tensor& other) const;
+    Tensor operator*(const Tensor& other) const;
+    Tensor operator/(const Tensor& other) const;
     Tensor& operator=(const Tensor& other);
     Tensor& operator=(Tensor&& other) noexcept;
 
